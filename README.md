@@ -346,3 +346,65 @@ Constraints:
 ## Next Recommended Step
 
 Start by implementing the data model and authentication layer first. After that, build the protected video library and connect Cloudflare playback to authorized records only.
+
+## Next 3 Major Milestones
+
+### Milestone 1: Secure Application Foundation
+
+Goal:
+
+Establish the application base so users can log in securely and the system can reliably identify who they are.
+
+High-level outcomes:
+
+- Set up the database and Prisma schema
+- Create users, organizations, sessions, videos, and access models
+- Implement email and password authentication
+- Protect private routes and admin routes
+- Add basic seed data for local development
+
+Definition of done:
+
+- Users can log in and log out
+- Protected pages require authentication
+- Core data model is in place and tested locally
+
+### Milestone 2: Private Video Library And Cloudflare Playback
+
+Goal:
+
+Allow authorized users to browse and watch only the videos they are supposed to access.
+
+High-level outcomes:
+
+- Build dashboard and video library screens
+- Save Cloudflare video IDs and metadata in the app
+- Create a video detail page with Cloudflare playback
+- Add server-side checks so users only see allowed videos
+- Support filtering by organization, project, or customer
+
+Definition of done:
+
+- Logged-in users can browse their allowed video list
+- Users can open a video detail page and stream from Cloudflare
+- Unauthorized users cannot access restricted videos
+
+### Milestone 3: Admin Controls And Access Management
+
+Goal:
+
+Give Top Shot Drones a practical admin workflow to manage customers, videos, and permissions without engineering involvement.
+
+High-level outcomes:
+
+- Build admin pages for users, organizations, and videos
+- Add tools to assign and revoke video access
+- Add role management for admin, staff, customer, and restricted viewer
+- Add activity logging for major admin actions
+- Prepare the app for production hardening and deployment
+
+Definition of done:
+
+- Admins can manage users and organizations
+- Admins can control which users can access which videos
+- Access changes are enforced immediately and recorded
