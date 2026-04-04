@@ -1,0 +1,7 @@
+# Ignore everything by default
+*
+
+# Keep the project planning and research docs
+!.gitignore
+!README.md
+!research-hudl-competitors-and-mvp.md
