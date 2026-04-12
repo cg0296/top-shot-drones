@@ -27,13 +27,20 @@ export async function getOrCreateDbUser() {
     return dbUser;
   }
 
+  // Emails that should be granted ADMIN on first sign-up
+  const adminEmails = [
+    'wparker@topshotdrones.net',
+  ];
+
+  const role = adminEmails.includes(email.toLowerCase()) ? 'ADMIN' : 'CUSTOMER';
+
   // Create a new user — default to CUSTOMER role, no org
   dbUser = await db.user.create({
     data: {
       name,
       email,
       passwordHash: 'clerk-managed',
-      role: 'CUSTOMER',
+      role,
     },
     include: { organization: true },
   });
