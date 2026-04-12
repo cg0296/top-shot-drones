@@ -37,6 +37,8 @@ model User {
   sessions        Session[]
   videoAccess     VideoAccess[]
   uploadedVideos  Video[]       @relation("UploadedBy")
+  comments        Comment[]
+  reactions       Reaction[]
   auditLogs       AuditLog[]
 
   @@map("users")
@@ -70,6 +72,8 @@ model Video {
   organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   uploadedBy         User            @relation("UploadedBy", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
   videoAccess        VideoAccess[]
+  comments           Comment[]
+  reactions          Reaction[]
 
   @@map("videos")
 }
@@ -86,6 +90,34 @@ model VideoAccess {
 
   @@unique([videoId, userId])
   @@map("video_access")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  videoId   String   @map("video_id")
+  userId    String   @map("user_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  videoId   String   @map("video_id")
+  userId    String   @map("user_id")
+  emoji     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId, emoji])
+  @@map("reactions")
 }
 
 model AuditLog {

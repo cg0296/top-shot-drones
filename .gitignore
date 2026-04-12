@@ -48,3 +48,5 @@ prisma/*.db-journal
 # IDE
 .vscode/
 .idea/
+
+.vercel

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import { RegisterVideoForm } from '@/components/register-video-form';
+import { SyncCloudflareButton } from '@/components/sync-cloudflare-button';
 
 export const metadata = {
   title: 'Manage Videos — Top Shot Drones',
@@ -38,9 +39,12 @@ export default async function AdminVideosPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="mb-8 text-2xl font-bold tracking-tight gradient-text">
-        Manage Videos
-      </h1>
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight gradient-text">
+          Manage Videos
+        </h1>
+        {isAdmin && <SyncCloudflareButton />}
+      </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
         <table className="table-dark w-full">

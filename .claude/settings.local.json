@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.hudl.com)",
+      "WebFetch(domain:www.maxpreps.com)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}

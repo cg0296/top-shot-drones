@@ -76,19 +76,24 @@ export default async function ProtectedLayout({
         </nav>
 
         {/* Bottom: user avatar + sign out */}
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-card)] text-xs font-semibold text-[var(--text-secondary)] border border-[var(--border)]"
-            title={`${user.name} (${user.role})`}
-          >
-            {user.name.charAt(0).toUpperCase()}
+        <div className="w-full border-t border-[var(--border)] px-3 pt-4">
+          <div className="flex items-center gap-3 rounded-xl px-3 py-2">
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bg-card)] text-xs font-semibold text-[var(--text-secondary)] border border-[var(--border)]"
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-[var(--text-primary)]">{user.name}</p>
+              <p className="text-xs text-[var(--text-muted)]">{user.role}</p>
+            </div>
+            <SignOutButton />
           </div>
-          <SignOutButton />
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="ml-[68px] flex-1 min-h-screen bg-[var(--bg-primary)]">
+      <main className="ml-[200px] flex-1 min-h-screen bg-[var(--bg-primary)]">
         <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
           {children}
         </div>
