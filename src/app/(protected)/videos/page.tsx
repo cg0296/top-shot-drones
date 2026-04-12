@@ -28,7 +28,7 @@ export default async function VideosPage() {
           where: {
             OR: [
               { visibility: 'PUBLIC' },
-              { organizationId: user.organizationId! },
+              ...(user.organizationId ? [{ organizationId: user.organizationId }] : []),
             ],
           },
           include: { organization: true },
@@ -53,15 +53,30 @@ export default async function VideosPage() {
   })();
 
   if (videos.length === 0) {
+    const noOrg = !user.organizationId && user.role !== 'ADMIN';
     return (
       <div className="animate-fade-in">
         <h1 className="mb-8 text-2xl font-bold tracking-tight gradient-text">Videos</h1>
         <div className="flex min-h-[400px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)]">
-          <div className="text-center">
+          <div className="text-center max-w-sm">
             <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
             </svg>
-            <p className="mt-4 text-sm text-[var(--text-muted)]">No videos available yet</p>
+            {noOrg ? (
+              <>
+                <p className="mt-4 text-base font-medium text-[var(--text-primary)]">Welcome to Top Shot Drones</p>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">
+                  You&apos;re not part of an organization yet. Your administrator will assign you to a team and grant you access to videos soon.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-4 text-base font-medium text-[var(--text-primary)]">No videos available</p>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">
+                  There are no videos shared with you yet. Check back later or contact your administrator.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
