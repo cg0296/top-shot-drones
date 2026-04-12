@@ -1,25 +1,19 @@
 export const dynamic = 'force-dynamic';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getSessionUser } from '@/lib/auth';
-import SignOutButton from '@/components/sign-out-button';
+import { getCurrentUser } from '@/lib/auth-helpers';
+import { UserButton } from '@clerk/nextjs';
 
 export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('session_token')?.value;
+  const user = await getCurrentUser();
 
-  if (!token) redirect('/login');
-
-  const user = await getSessionUser(token);
-
-  if (!user) redirect('/login');
+  if (!user) redirect('/sign-in');
 
   const isPrivileged = user.role === 'ADMIN' || user.role === 'STAFF';
 
@@ -76,19 +70,14 @@ export default async function ProtectedLayout({
           )}
         </nav>
 
-        {/* Bottom: user avatar + sign out */}
+        {/* Bottom: Clerk UserButton */}
         <div className="w-full border-t border-[var(--border)] px-3 pt-4">
           <div className="flex items-center gap-3 rounded-xl px-3 py-2">
-            <div
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bg-card)] text-xs font-semibold text-[var(--text-secondary)] border border-[var(--border)]"
-            >
-              {user.name.charAt(0).toUpperCase()}
-            </div>
+            <UserButton />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-[var(--text-primary)]">{user.name}</p>
               <p className="text-xs text-[var(--text-muted)]">{user.role}</p>
             </div>
-            <SignOutButton />
           </div>
         </div>
       </aside>
