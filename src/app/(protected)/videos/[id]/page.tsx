@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
+import { getSignedPlaybackToken } from '@/lib/cloudflare';
 import type { Metadata } from 'next';
 
 type Props = {
@@ -69,7 +70,20 @@ export default async function VideoDetailPage({ params }: Props) {
   if (!authorized) redirect('/dashboard');
 
   const subdomain = process.env.CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN;
-  const iframeSrc = `https://customer-${subdomain}.cloudflarestream.com/${video.cloudflareVideoId}/iframe`;
+
+  let iframeSrc: string | null = null;
+  let privateVideoError = false;
+
+  if (video.visibility === 'PRIVATE') {
+    const token = await getSignedPlaybackToken(video.cloudflareVideoId);
+    if (token) {
+      iframeSrc = `https://customer-${subdomain}.cloudflarestream.com/${token}/iframe`;
+    } else {
+      privateVideoError = true;
+    }
+  } else {
+    iframeSrc = `https://customer-${subdomain}.cloudflarestream.com/${video.cloudflareVideoId}/iframe`;
+  }
 
   const uploadDate = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
@@ -102,14 +116,20 @@ export default async function VideoDetailPage({ params }: Props) {
 
       {/* Video player */}
       <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-black">
-        <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-          <iframe
-            src={iframeSrc}
-            className="absolute inset-0 h-full w-full"
-            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
+        {privateVideoError ? (
+          <div className="flex items-center justify-center py-20">
+            <p className="text-sm text-red-400">Unable to load private video</p>
+          </div>
+        ) : (
+          <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+            <iframe
+              src={iframeSrc!}
+              className="absolute inset-0 h-full w-full"
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        )}
       </div>
 
       {/* Video metadata */}

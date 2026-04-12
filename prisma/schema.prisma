@@ -37,6 +37,7 @@ model User {
   sessions        Session[]
   videoAccess     VideoAccess[]
   uploadedVideos  Video[]       @relation("UploadedBy")
+  auditLogs       AuditLog[]
 
   @@map("users")
 }
@@ -85,6 +86,20 @@ model VideoAccess {
 
   @@unique([videoId, userId])
   @@map("video_access")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String   @map("actor_id")
+  action       String
+  targetEntity String   @map("target_entity")
+  targetId     String   @map("target_id")
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  actor        User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
 }
 
 model Session {
