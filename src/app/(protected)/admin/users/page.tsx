@@ -50,10 +50,26 @@ export default async function AdminUsersPage() {
         <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
           Invite User
         </h2>
-        <p className="mb-4 text-sm text-[var(--text-muted)]">
-          Send an email invitation. The user will create their account via the link and automatically get the role and video access you set here.
-        </p>
-        <InviteUserForm organizations={organizations} videos={videos} />
+        {organizations.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-[var(--border)] p-6 text-center">
+            <p className="text-sm text-[var(--text-muted)]">
+              You need at least one organization before you can invite users.
+            </p>
+            <a
+              href="/admin/organizations"
+              className="mt-3 inline-block text-sm font-medium text-[var(--accent)] hover:underline"
+            >
+              Create your first organization →
+            </a>
+          </div>
+        ) : (
+          <>
+            <p className="mb-4 text-sm text-[var(--text-muted)]">
+              Send an email invitation. The user will create their account via the link and automatically get the role and video access you set here.
+            </p>
+            <InviteUserForm organizations={organizations} videos={videos} />
+          </>
+        )}
       </div>
 
       {/* User table */}

@@ -51,10 +51,24 @@ export default async function AdminVideosPage() {
         <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
           Register a Video
         </h2>
-        <RegisterVideoForm
-          organizations={organizations}
-          currentUserId={user.id}
-        />
+        {organizations.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-[var(--border)] p-6 text-center">
+            <p className="text-sm text-[var(--text-muted)]">
+              You need at least one organization before you can register videos.
+            </p>
+            <a
+              href="/admin/organizations"
+              className="mt-3 inline-block text-sm font-medium text-[var(--accent)] hover:underline"
+            >
+              Create your first organization →
+            </a>
+          </div>
+        ) : (
+          <RegisterVideoForm
+            organizations={organizations}
+            currentUserId={user.id}
+          />
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
