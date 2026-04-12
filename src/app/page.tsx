@@ -8,13 +8,15 @@ export default function Home() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(229,25,62,0.08)_0%,_transparent_70%)]" />
 
       <div className="animate-fade-in-up relative z-10 flex flex-col items-center gap-8 px-4 text-center">
-        <Image
-          src="/tsd-logo.png"
-          alt="Top Shot Drones"
-          width={120}
-          height={120}
-          priority
-        />
+        <div className="rounded-2xl bg-white/90 p-4">
+          <Image
+            src="/tsd-logo.png"
+            alt="Top Shot Drones"
+            width={120}
+            height={120}
+            priority
+          />
+        </div>
         <div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl gradient-text">
             Top Shot Drones

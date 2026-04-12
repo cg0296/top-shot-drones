@@ -29,13 +29,14 @@ export default async function ProtectedLayout({
       <aside className="fixed inset-y-0 left-0 z-40 flex w-[200px] flex-col items-center border-r border-[var(--border)] bg-[var(--bg-secondary)] py-6">
         {/* Logo */}
         <Link href="/dashboard" className="mb-2 transition-transform hover:scale-105">
-          <Image
-            src="/tsd-logo.png"
-            alt="Top Shot Drones"
-            width={120}
-            height={120}
-            className="drop-shadow-[0_0_20px_rgba(229,25,62,0.2)]"
-          />
+          <div className="rounded-xl bg-white/90 p-2.5">
+            <Image
+              src="/tsd-logo.png"
+              alt="Top Shot Drones"
+              width={120}
+              height={120}
+            />
+          </div>
         </Link>
 
         {/* Divider */}

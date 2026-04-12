@@ -56,11 +56,13 @@ export default function LoginPage() {
       <div className="animate-fade-in-up w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-10">
-          <img
-            src="/tsd-logo.png"
-            alt="Top Shot Drones"
-            className="mx-auto mb-5 h-20 w-auto drop-shadow-[0_0_30px_rgba(229,25,62,0.2)]"
-          />
+          <div className="mx-auto mb-5 inline-block rounded-2xl bg-white/90 p-3">
+            <img
+              src="/tsd-logo.png"
+              alt="Top Shot Drones"
+              className="h-20 w-auto"
+            />
+          </div>
           <h1 className="text-2xl font-bold tracking-tight gradient-text">
             Top Shot Drones
           </h1>
