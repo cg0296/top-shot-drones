@@ -44,28 +44,30 @@ export default async function VideoDetailPage({ params }: Props) {
 
   if (!video) notFound();
 
-  // Authorization
-  let authorized = false;
+  // Authorization — PUBLIC videos are visible to all authenticated users
+  let authorized = video.visibility === 'PUBLIC';
 
-  switch (user.role) {
-    case 'ADMIN':
-      authorized = true;
-      break;
-    case 'STAFF':
-    case 'CUSTOMER':
-      authorized = video.organizationId === user.organizationId;
-      break;
-    case 'VIEWER': {
-      const access = await db.videoAccess.findUnique({
-        where: {
-          videoId_userId: {
-            videoId: video.id,
-            userId: user.id,
+  if (!authorized) {
+    switch (user.role) {
+      case 'ADMIN':
+        authorized = true;
+        break;
+      case 'STAFF':
+      case 'CUSTOMER':
+        authorized = video.organizationId === user.organizationId;
+        break;
+      case 'VIEWER': {
+        const access = await db.videoAccess.findUnique({
+          where: {
+            videoId_userId: {
+              videoId: video.id,
+              userId: user.id,
+            },
           },
-        },
-      });
-      authorized = !!access;
-      break;
+        });
+        authorized = !!access;
+        break;
+      }
     }
   }
 

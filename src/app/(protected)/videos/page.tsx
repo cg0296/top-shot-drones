@@ -25,7 +25,12 @@ export default async function VideosPage() {
       case 'STAFF':
       case 'CUSTOMER':
         return db.video.findMany({
-          where: { organizationId: user.organizationId! },
+          where: {
+            OR: [
+              { visibility: 'PUBLIC' },
+              { organizationId: user.organizationId! },
+            ],
+          },
           include: { organization: true },
           orderBy: { createdAt: 'desc' },
         });
@@ -33,7 +38,10 @@ export default async function VideosPage() {
       case 'VIEWER':
         return db.video.findMany({
           where: {
-            videoAccess: { some: { userId: user.id } },
+            OR: [
+              { visibility: 'PUBLIC' },
+              { videoAccess: { some: { userId: user.id } } },
+            ],
           },
           include: { organization: true },
           orderBy: { createdAt: 'desc' },
