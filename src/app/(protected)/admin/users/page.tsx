@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import CreateUserForm from '@/components/create-user-form';
+import UserActions from '@/components/user-actions';
 
 export const metadata = {
   title: 'Manage Users — Top Shot Drones',
@@ -37,7 +38,16 @@ export default async function AdminUsersPage() {
     <div className="animate-fade-in">
       <h1 className="mb-6 text-2xl font-bold tracking-tight gradient-text">Manage Users</h1>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
+      {/* Create user form at top */}
+      <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
+        <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
+          Create New User
+        </h2>
+        <CreateUserForm organizations={organizations} />
+      </div>
+
+      {/* Users table */}
+      <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
         <table className="table-dark min-w-full">
           <thead>
             <tr>
@@ -46,6 +56,7 @@ export default async function AdminUsersPage() {
               <th>Role</th>
               <th>Organization</th>
               <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -60,24 +71,30 @@ export default async function AdminUsersPage() {
                 </td>
                 <td>{u.organization?.name ?? '—'}</td>
                 <td>{new Date(u.createdAt).toLocaleDateString()}</td>
+                <td>
+                  <UserActions
+                    user={{
+                      id: u.id,
+                      name: u.name,
+                      email: u.email,
+                      role: u.role,
+                      organizationId: u.organizationId,
+                    }}
+                    organizations={organizations}
+                    currentUserId={user.id}
+                  />
+                </td>
               </tr>
             ))}
             {users.length === 0 && (
               <tr>
-                <td colSpan={5} className="text-center text-[var(--text-muted)]">
+                <td colSpan={6} className="text-center text-[var(--text-muted)]">
                   No users found.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
-          Create New User
-        </h2>
-        <CreateUserForm organizations={organizations} />
       </div>
     </div>
   );

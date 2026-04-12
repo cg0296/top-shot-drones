@@ -46,6 +46,17 @@ export default async function AdminVideosPage() {
         {isAdmin && <SyncCloudflareButton />}
       </div>
 
+      {/* Register video form at top */}
+      <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
+        <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
+          Register a Video
+        </h2>
+        <RegisterVideoForm
+          organizations={organizations}
+          currentUserId={user.id}
+        />
+      </div>
+
       <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
         <table className="table-dark w-full">
           <thead>
@@ -100,15 +111,6 @@ export default async function AdminVideosPage() {
         </table>
       </div>
 
-      <div className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
-          Register a Video
-        </h2>
-        <RegisterVideoForm
-          organizations={organizations}
-          currentUserId={user.id}
-        />
-      </div>
     </div>
   );
 }
