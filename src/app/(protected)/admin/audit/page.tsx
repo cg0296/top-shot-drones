@@ -36,6 +36,9 @@ export default async function AdminAuditPage() {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const typedEntries = entries as (typeof entries[number] & { actor: { name: string; email: string } })[];
+
   return (
     <div className="animate-fade-in">
       <h1 className="mb-6 text-2xl font-bold tracking-tight gradient-text">Audit Log</h1>
@@ -53,7 +56,7 @@ export default async function AdminAuditPage() {
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => (
+            {typedEntries.map((entry) => (
               <tr key={entry.id}>
                 <td className="whitespace-nowrap">
                   {new Date(entry.createdAt).toLocaleString()}
