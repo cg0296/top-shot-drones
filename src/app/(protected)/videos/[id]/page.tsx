@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import { getSignedPlaybackToken } from '@/lib/cloudflare';
+import { VideoReactions } from '@/components/video-reactions';
+import { VideoComments } from '@/components/video-comments';
 import type { Metadata } from 'next';
 
 type Props = {
@@ -153,6 +155,18 @@ export default async function VideoDetailPage({ params }: Props) {
             </p>
           </div>
         )}
+
+        {/* Reactions */}
+        <VideoReactions videoId={video.id} />
+      </div>
+
+      {/* Comments */}
+      <div className="mt-10 border-t border-[var(--border)] pt-8">
+        <VideoComments
+          videoId={video.id}
+          currentUserId={user.id}
+          isAdmin={user.role === 'ADMIN'}
+        />
       </div>
     </div>
   );
