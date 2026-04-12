@@ -90,7 +90,7 @@ export default async function VideosPage() {
         <span className="text-sm text-[var(--text-muted)]">{videos.length} video{videos.length !== 1 ? 's' : ''}</span>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 stagger-children">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 stagger-children">
         {videos.map((video) => (
           <Link
             key={video.id}

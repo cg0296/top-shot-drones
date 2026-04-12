@@ -228,7 +228,7 @@ export default async function DashboardPage() {
               View all ({videoCount}) →
             </Link>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 stagger-children">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 stagger-children">
             {recent.slice(0, 8).map((video) => (
               <Link
                 key={video.id}
