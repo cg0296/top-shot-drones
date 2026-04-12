@@ -4,17 +4,10 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import CreateUserForm from '@/components/create-user-form';
-import UserActions from '@/components/user-actions';
+import UserTable from '@/components/user-table';
 
 export const metadata = {
   title: 'Manage Users — Top Shot Drones',
-};
-
-const roleBadge: Record<string, string> = {
-  ADMIN: 'badge-red',
-  STAFF: 'badge-blue',
-  CUSTOMER: 'badge-green',
-  VIEWER: 'badge-slate',
 };
 
 export default async function AdminUsersPage() {
@@ -34,11 +27,21 @@ export default async function AdminUsersPage() {
     }),
   ]);
 
+  // Serialize for client component
+  const serializedUsers = users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    organizationId: u.organizationId,
+    organizationName: u.organization?.name ?? null,
+    createdAt: u.createdAt.toISOString(),
+  }));
+
   return (
     <div className="animate-fade-in">
       <h1 className="mb-6 text-2xl font-bold tracking-tight gradient-text">Manage Users</h1>
 
-      {/* Create user form at top */}
       <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
         <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
           Create New User
@@ -46,56 +49,11 @@ export default async function AdminUsersPage() {
         <CreateUserForm organizations={organizations} />
       </div>
 
-      {/* Users table */}
-      <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
-        <table className="table-dark min-w-full">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Organization</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td className="font-medium text-[var(--text-primary)]">{u.name}</td>
-                <td>{u.email}</td>
-                <td>
-                  <span className={`badge ${roleBadge[u.role] ?? 'badge-slate'}`}>
-                    {u.role}
-                  </span>
-                </td>
-                <td>{u.organization?.name ?? '—'}</td>
-                <td>{new Date(u.createdAt).toLocaleDateString()}</td>
-                <td>
-                  <UserActions
-                    user={{
-                      id: u.id,
-                      name: u.name,
-                      email: u.email,
-                      role: u.role,
-                      organizationId: u.organizationId,
-                    }}
-                    organizations={organizations}
-                    currentUserId={user.id}
-                  />
-                </td>
-              </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={6} className="text-center text-[var(--text-muted)]">
-                  No users found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <UserTable
+        users={serializedUsers}
+        organizations={organizations}
+        currentUserId={user.id}
+      />
     </div>
   );
 }
