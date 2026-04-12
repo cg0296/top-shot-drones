@@ -14,7 +14,7 @@ export const metadata = {
 export default async function AdminVideosPage() {
   const user = await getCurrentUser();
 
-  if (!user) redirect('/login');
+  if (!user) redirect('/sign-in');
   if (user.role !== 'ADMIN' && user.role !== 'STAFF') redirect('/dashboard');
 
   const isAdmin = user.role === 'ADMIN';

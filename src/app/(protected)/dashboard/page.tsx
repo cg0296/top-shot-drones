@@ -1,8 +1,7 @@
 export const dynamic = 'force-dynamic';
 
-import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { getSessionUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth-helpers';
 import { redirect } from 'next/navigation';
 
 export const metadata = {
@@ -10,14 +9,9 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('session_token')?.value;
+  const user = await getCurrentUser();
 
-  if (!token) redirect('/login');
-
-  const user = await getSessionUser(token);
-
-  if (!user) redirect('/login');
+  if (!user) redirect('/sign-in');
 
   const isPrivileged = user.role === 'ADMIN' || user.role === 'STAFF';
 

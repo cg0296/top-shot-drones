@@ -19,7 +19,7 @@ const roleBadge: Record<string, string> = {
 export default async function AdminUsersPage() {
   const user = await getCurrentUser();
 
-  if (!user) redirect('/login');
+  if (!user) redirect('/sign-in');
   if (user.role !== 'ADMIN') redirect('/dashboard');
 
   const [users, organizations] = await Promise.all([

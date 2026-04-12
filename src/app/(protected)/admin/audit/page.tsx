@@ -23,7 +23,7 @@ function formatMetadata(meta: unknown): string {
 export default async function AdminAuditPage() {
   const user = await getCurrentUser();
 
-  if (!user) redirect('/login');
+  if (!user) redirect('/sign-in');
   if (user.role !== 'ADMIN') redirect('/dashboard');
 
   const entries = await db.auditLog.findMany({

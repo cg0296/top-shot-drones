@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod/v4';
 import { getCurrentUser } from '@/lib/auth-helpers';
-import { hashPassword } from '@/lib/auth';
+import { hash } from 'bcryptjs';
 import { db } from '@/lib/db';
 import { logAction } from '@/lib/audit';
 
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const passwordHash = await hashPassword(password);
+  const passwordHash = await hash(password, 12);
 
   const newUser = await db.user.create({
     data: {

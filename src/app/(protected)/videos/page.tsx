@@ -12,7 +12,7 @@ export const metadata = {
 export default async function VideosPage() {
   const user = await getCurrentUser();
 
-  if (!user) redirect('/login');
+  if (!user) redirect('/sign-in');
 
   const videos = await (async () => {
     switch (user.role) {

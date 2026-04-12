@@ -32,7 +32,7 @@ export default async function VideoDetailPage({ params }: Props) {
   const { id } = await params;
 
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/sign-in');
 
   const video = await db.video.findUnique({
     where: { id },
