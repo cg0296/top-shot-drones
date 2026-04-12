@@ -58,24 +58,20 @@ export default function CreateUserForm({ organizations }: Props) {
     }
   }
 
-  const inputClass =
-    'block w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500';
-
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-lg border border-slate-200 bg-white p-6"
+      className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6"
     >
       {error && (
-        <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg bg-[rgba(229,25,62,0.1)] border border-[rgba(229,25,62,0.2)] px-4 py-3 text-sm text-[var(--accent-hover)]">
           {error}
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {/* Name */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
             Name
           </label>
           <input
@@ -83,17 +79,16 @@ export default function CreateUserForm({ organizations }: Props) {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={inputClass}
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
             placeholder="Jane Doe"
           />
           {fieldErrors.name && (
-            <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>
+            <p className="mt-1 text-xs text-[var(--accent)]">{fieldErrors.name}</p>
           )}
         </div>
 
-        {/* Email */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
             Email
           </label>
           <input
@@ -101,17 +96,16 @@ export default function CreateUserForm({ organizations }: Props) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
             placeholder="jane@example.com"
           />
           {fieldErrors.email && (
-            <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+            <p className="mt-1 text-xs text-[var(--accent)]">{fieldErrors.email}</p>
           )}
         </div>
 
-        {/* Password */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
             Password
           </label>
           <input
@@ -120,23 +114,22 @@ export default function CreateUserForm({ organizations }: Props) {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
             placeholder="Min 8 characters"
           />
           {fieldErrors.password && (
-            <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>
+            <p className="mt-1 text-xs text-[var(--accent)]">{fieldErrors.password}</p>
           )}
         </div>
 
-        {/* Role */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
             Role
           </label>
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className={inputClass}
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           >
             {ROLES.map((r) => (
               <option key={r} value={r}>
@@ -145,19 +138,18 @@ export default function CreateUserForm({ organizations }: Props) {
             ))}
           </select>
           {fieldErrors.role && (
-            <p className="mt-1 text-xs text-red-600">{fieldErrors.role}</p>
+            <p className="mt-1 text-xs text-[var(--accent)]">{fieldErrors.role}</p>
           )}
         </div>
 
-        {/* Organization */}
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
             Organization
           </label>
           <select
             value={organizationId}
             onChange={(e) => setOrganizationId(e.target.value)}
-            className={inputClass}
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
             required
           >
             <option value="" disabled>
@@ -170,9 +162,7 @@ export default function CreateUserForm({ organizations }: Props) {
             ))}
           </select>
           {fieldErrors.organizationId && (
-            <p className="mt-1 text-xs text-red-600">
-              {fieldErrors.organizationId}
-            </p>
+            <p className="mt-1 text-xs text-[var(--accent)]">{fieldErrors.organizationId}</p>
           )}
         </div>
       </div>
@@ -181,7 +171,7 @@ export default function CreateUserForm({ organizations }: Props) {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-accent rounded-lg px-5 py-2.5 text-sm font-semibold"
         >
           {submitting ? 'Creating...' : 'Create User'}
         </button>

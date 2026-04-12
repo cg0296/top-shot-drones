@@ -46,54 +46,79 @@ export default async function VideosPage() {
 
   if (videos.length === 0) {
     return (
-      <div className="mx-auto max-w-4xl">
-        <h1 className="mb-8 text-2xl font-bold text-slate-900">Videos</h1>
-        <div className="flex min-h-[300px] items-center justify-center rounded-lg border border-dashed border-slate-300">
-          <p className="text-sm text-slate-500">No videos available</p>
+      <div className="animate-fade-in">
+        <h1 className="mb-8 text-2xl font-bold tracking-tight gradient-text">Videos</h1>
+        <div className="flex min-h-[400px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)]">
+          <div className="text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            <p className="mt-4 text-sm text-[var(--text-muted)]">No videos available yet</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <h1 className="mb-8 text-2xl font-bold text-slate-900">Videos</h1>
+    <div className="animate-fade-in">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight gradient-text">Videos</h1>
+        <span className="text-sm text-[var(--text-muted)]">{videos.length} video{videos.length !== 1 ? 's' : ''}</span>
+      </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 stagger-children">
         {videos.map((video) => (
           <Link
             key={video.id}
             href={`/videos/${video.id}`}
-            className="group overflow-hidden rounded-lg border border-slate-200 transition-colors hover:border-slate-300 hover:bg-slate-50"
+            className="video-card group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]"
           >
             {/* Thumbnail */}
-            {video.thumbnailUrl ? (
-              <img
-                src={video.thumbnailUrl}
-                alt={video.title}
-                className="aspect-video w-full object-cover"
-              />
-            ) : (
-              <div className="flex aspect-video w-full items-center justify-center bg-slate-100">
-                <span className="text-xs text-slate-400">No thumbnail</span>
+            <div className="relative aspect-video w-full overflow-hidden bg-[var(--bg-secondary)]">
+              {video.thumbnailUrl ? (
+                <img
+                  src={video.thumbnailUrl}
+                  alt={video.title}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                  </svg>
+                </div>
+              )}
+
+              {/* Hover overlay with play button */}
+              <div className="video-overlay absolute inset-0 flex items-center justify-center bg-black/40">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5.14v14l11-7-11-7z" />
+                  </svg>
+                </div>
               </div>
-            )}
+
+              {/* Gradient bottom */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--bg-card)] to-transparent" />
+            </div>
 
             {/* Card body */}
-            <div className="p-4">
-              <h2 className="truncate text-sm font-semibold text-slate-900 group-hover:text-slate-700">
+            <div className="p-3.5">
+              <h2 className="truncate text-sm font-semibold text-[var(--text-primary)]">
                 {video.title}
               </h2>
-              <p className="mt-1 text-xs text-slate-500">
-                {video.organization.name}
-              </p>
-              <p className="mt-1 text-xs text-slate-400">
-                {new Date(video.createdAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </p>
+              <div className="mt-1.5 flex items-center justify-between">
+                <p className="text-xs text-[var(--text-muted)]">
+                  {video.organization.name}
+                </p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  {new Date(video.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </p>
+              </div>
             </div>
           </Link>
         ))}

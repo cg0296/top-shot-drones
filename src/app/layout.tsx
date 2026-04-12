@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Top Shot Drones',
-  description: 'Private video streaming platform',
+  description: 'Private video streaming platform for drone sports videography',
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="antialiased">{children}</body>
+      <body className="bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased">{children}</body>
     </html>
   );
 }

@@ -92,33 +92,28 @@ export default async function VideoDetailPage({ params }: Props) {
   }).format(video.createdAt);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="animate-fade-in mx-auto max-w-5xl">
       {/* Back link */}
       <Link
         href="/videos"
-        className="mb-6 inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
       >
-        <svg
-          className="mr-1.5 h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 19l-7-7 7-7"
-          />
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
         </svg>
         Back to Videos
       </Link>
 
       {/* Video player */}
-      <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-black">
+      <div className="overflow-hidden rounded-2xl bg-black shadow-2xl shadow-black/50">
         {privateVideoError ? (
-          <div className="flex items-center justify-center py-20">
-            <p className="text-sm text-red-400">Unable to load private video</p>
+          <div className="flex items-center justify-center py-24">
+            <div className="text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-10 w-10 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              <p className="mt-3 text-sm text-[var(--text-muted)]">Unable to load private video</p>
+            </div>
           </div>
         ) : (
           <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
@@ -134,20 +129,29 @@ export default async function VideoDetailPage({ params }: Props) {
 
       {/* Video metadata */}
       <div className="mt-6 space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">{video.title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+          {video.title}
+        </h1>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
-          <span>{video.organization.name}</span>
-          <span className="hidden sm:inline">&middot;</span>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-muted)]">
+          <span className="inline-flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 7.5h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+            </svg>
+            {video.organization.name}
+          </span>
+          <span className="h-1 w-1 rounded-full bg-[var(--text-muted)]" />
           <span>{uploadDate}</span>
-          <span className="hidden sm:inline">&middot;</span>
-          <span>Uploaded by {video.uploadedBy.name}</span>
+          <span className="h-1 w-1 rounded-full bg-[var(--text-muted)]" />
+          <span>by {video.uploadedBy.name}</span>
         </div>
 
         {video.description && (
-          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">
-            {video.description}
-          </p>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--text-secondary)]">
+              {video.description}
+            </p>
+          </div>
         )}
       </div>
     </div>

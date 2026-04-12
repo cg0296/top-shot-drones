@@ -87,69 +87,52 @@ export function VideoAccessManager({ videoId, grants, eligibleUsers }: Props) {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg bg-[rgba(229,25,62,0.1)] border border-[rgba(229,25,62,0.2)] px-4 py-3 text-sm text-[var(--accent-hover)]">
           {error}
         </div>
       )}
 
       {/* Current grants table */}
-      <div className="overflow-hidden rounded-lg border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+      <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
+        <table className="table-dark min-w-full">
+          <thead>
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Name
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Email
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Access Type
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Granted
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-slate-500">
-                Actions
-              </th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Access Type</th>
+              <th>Granted</th>
+              <th className="text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
+          <tbody>
             {grants.length === 0 ? (
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-8 text-center text-sm text-slate-400"
-                >
+                <td colSpan={5} className="text-center text-[var(--text-muted)]">
                   No access grants yet
                 </td>
               </tr>
             ) : (
               grants.map((grant) => (
                 <tr key={grant.id}>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                  <td className="whitespace-nowrap font-medium text-[var(--text-primary)]">
                     {grant.userName}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
-                    {grant.userEmail}
+                  <td className="whitespace-nowrap">{grant.userEmail}</td>
+                  <td className="whitespace-nowrap">
+                    <span className="badge badge-blue">{grant.accessType}</span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                      {grant.accessType}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-500">
+                  <td className="whitespace-nowrap">
                     {new Date(grant.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
                     })}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="whitespace-nowrap text-right">
                     <button
                       onClick={() => handleRevoke(grant.userId)}
                       disabled={revokingId === grant.userId}
-                      className="rounded-md px-3 py-1 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--accent)] transition-colors hover:bg-[rgba(229,25,62,0.1)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {revokingId === grant.userId ? 'Revoking...' : 'Revoke'}
                     </button>
@@ -163,19 +146,19 @@ export function VideoAccessManager({ videoId, grants, eligibleUsers }: Props) {
 
       {/* Grant access form */}
       {eligibleUsers.length === 0 ? (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-[var(--text-muted)]">
           All users already have access
         </p>
       ) : (
-        <div className="rounded-lg border border-slate-200 bg-white p-6">
-          <h3 className="mb-4 text-sm font-semibold text-slate-900">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
+          <h3 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">
             Grant Access
           </h3>
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <label
                 htmlFor="grant-user"
-                className="mb-1 block text-sm font-medium text-slate-700"
+                className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider"
               >
                 User
               </label>
@@ -183,7 +166,7 @@ export function VideoAccessManager({ videoId, grants, eligibleUsers }: Props) {
                 id="grant-user"
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+                className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
               >
                 <option value="">Select a user</option>
                 {eligibleUsers.map((u) => (
@@ -196,7 +179,7 @@ export function VideoAccessManager({ videoId, grants, eligibleUsers }: Props) {
             <button
               onClick={handleGrant}
               disabled={!selectedUserId || granting}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-accent rounded-lg px-5 py-2.5 text-sm font-semibold"
             >
               {granting ? 'Granting...' : 'Grant'}
             </button>

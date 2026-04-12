@@ -73,18 +73,18 @@ export default function CreateOrgForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-md space-y-4 rounded-lg border border-slate-200 bg-white p-6"
+      className="max-w-md space-y-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6"
     >
       {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <div className="rounded-lg bg-[rgba(229,25,62,0.1)] border border-[rgba(229,25,62,0.2)] px-3.5 py-2.5 text-sm text-[var(--accent-hover)]">
           {error}
-        </p>
+        </div>
       )}
 
       <div>
         <label
           htmlFor="org-name"
-          className="mb-1 block text-sm font-medium text-slate-700"
+          className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider"
         >
           Name
         </label>
@@ -94,18 +94,18 @@ export default function CreateOrgForm() {
           value={name}
           onChange={(e) => handleNameChange(e.target.value)}
           required
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           placeholder="Acme Corp"
         />
         {fieldErrors.name && (
-          <p className="mt-1 text-xs text-red-500">{fieldErrors.name}</p>
+          <p className="mt-1 text-xs text-[var(--accent)]">{fieldErrors.name}</p>
         )}
       </div>
 
       <div>
         <label
           htmlFor="org-slug"
-          className="mb-1 block text-sm font-medium text-slate-700"
+          className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider"
         >
           Slug
         </label>
@@ -115,18 +115,18 @@ export default function CreateOrgForm() {
           value={slug}
           onChange={(e) => handleSlugChange(e.target.value)}
           required
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm font-mono"
           placeholder="acme-corp"
         />
         {fieldErrors.slug && (
-          <p className="mt-1 text-xs text-red-500">{fieldErrors.slug}</p>
+          <p className="mt-1 text-xs text-[var(--accent)]">{fieldErrors.slug}</p>
         )}
       </div>
 
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="btn-accent rounded-lg px-5 py-2.5 text-sm font-semibold"
       >
         {submitting ? 'Creating...' : 'Create Organization'}
       </button>

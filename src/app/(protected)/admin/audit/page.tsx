@@ -8,10 +8,10 @@ export const metadata = {
   title: 'Audit Log — Top Shot Drones',
 };
 
-const actionBadgeColors: Record<string, string> = {
-  GRANTED: 'bg-green-100 text-green-700',
-  REVOKED: 'bg-red-100 text-red-700',
-  CREATED: 'bg-blue-100 text-blue-700',
+const actionBadge: Record<string, string> = {
+  GRANTED: 'badge-green',
+  REVOKED: 'badge-red',
+  CREATED: 'badge-blue',
 };
 
 function formatMetadata(meta: unknown): string {
@@ -37,66 +37,48 @@ export default async function AdminAuditPage() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900">Audit Log</h1>
+    <div className="animate-fade-in">
+      <h1 className="mb-6 text-2xl font-bold tracking-tight gradient-text">Audit Log</h1>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50">
+      <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
+        <table className="table-dark min-w-full">
+          <thead>
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Timestamp
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Actor
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Action
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Target Entity
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Target ID
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                Metadata
-              </th>
+              <th>Timestamp</th>
+              <th>Actor</th>
+              <th>Action</th>
+              <th>Target Entity</th>
+              <th>Target ID</th>
+              <th>Metadata</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
+          <tbody>
             {entries.map((entry) => (
               <tr key={entry.id}>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-500">
+                <td className="whitespace-nowrap">
                   {new Date(entry.createdAt).toLocaleString()}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap font-medium text-[var(--text-primary)]">
                   {entry.actor?.name ?? entry.actor?.email ?? '—'}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <span
-                    className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${actionBadgeColors[entry.action] ?? 'bg-slate-100 text-slate-600'}`}
-                  >
+                <td className="whitespace-nowrap">
+                  <span className={`badge ${actionBadge[entry.action] ?? 'badge-slate'}`}>
                     {entry.action}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
-                  {entry.targetEntity}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600 font-mono text-xs">
-                  {entry.targetId}
-                </td>
-                <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-500" title={entry.metadata ? JSON.stringify(entry.metadata) : undefined}>
+                <td className="whitespace-nowrap">{entry.targetEntity}</td>
+                <td className="whitespace-nowrap font-mono text-xs">{entry.targetId}</td>
+                <td
+                  className="max-w-xs truncate"
+                  title={entry.metadata ? JSON.stringify(entry.metadata) : undefined}
+                >
                   {formatMetadata(entry.metadata)}
                 </td>
               </tr>
             ))}
             {entries.length === 0 && (
               <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-6 text-center text-sm text-slate-400"
-                >
+                <td colSpan={6} className="text-center text-[var(--text-muted)]">
                   No audit log entries yet.
                 </td>
               </tr>

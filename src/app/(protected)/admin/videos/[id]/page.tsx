@@ -25,10 +25,10 @@ export async function generateMetadata({
   };
 }
 
-const visibilityStyles: Record<string, string> = {
-  PUBLIC: 'bg-green-100 text-green-700',
-  ORG: 'bg-blue-100 text-blue-700',
-  PRIVATE: 'bg-slate-100 text-slate-600',
+const visibilityBadge: Record<string, string> = {
+  PUBLIC: 'badge-green',
+  ORG: 'badge-blue',
+  PRIVATE: 'badge-slate',
 };
 
 export default async function AdminVideoDetailPage({
@@ -49,7 +49,6 @@ export default async function AdminVideoDetailPage({
 
   if (!video) notFound();
 
-  // STAFF can only view videos in their own organization
   if (user.role === 'STAFF' && video.organizationId !== user.organizationId) {
     redirect('/dashboard');
   }
@@ -81,48 +80,49 @@ export default async function AdminVideoDetailPage({
   }));
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="animate-fade-in">
       <Link
         href="/admin/videos"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
       >
-        &larr; Back to Videos
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Videos
       </Link>
 
       {/* Video metadata */}
-      <div className="mb-8 rounded-lg border border-slate-200 bg-white p-6">
-        <h1 className="mb-4 text-2xl font-bold text-slate-900">
+      <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
+        <h1 className="mb-5 text-2xl font-bold text-[var(--text-primary)]">
           {video.title}
         </h1>
 
-        <dl className="grid gap-4 sm:grid-cols-2">
+        <dl className="grid gap-5 sm:grid-cols-2">
           <div>
-            <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <dt className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
               Organization
             </dt>
-            <dd className="mt-1 text-sm text-slate-900">
+            <dd className="mt-1 text-sm text-[var(--text-primary)]">
               {video.organization.name}
             </dd>
           </div>
 
           <div>
-            <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <dt className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
               Visibility
             </dt>
             <dd className="mt-1">
-              <span
-                className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${visibilityStyles[video.visibility] ?? 'bg-slate-100 text-slate-600'}`}
-              >
+              <span className={`badge ${visibilityBadge[video.visibility] ?? 'badge-slate'}`}>
                 {video.visibility}
               </span>
             </dd>
           </div>
 
           <div className="sm:col-span-2">
-            <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <dt className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
               Cloudflare Video ID
             </dt>
-            <dd className="mt-1 font-mono text-sm text-slate-600">
+            <dd className="mt-1 font-mono text-sm text-[var(--text-secondary)]">
               {video.cloudflareVideoId}
             </dd>
           </div>
@@ -130,7 +130,7 @@ export default async function AdminVideoDetailPage({
       </div>
 
       {/* Access management */}
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">
+      <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
         Access Management
       </h2>
       <VideoAccessManager

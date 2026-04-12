@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
@@ -36,55 +37,52 @@ export default async function AdminVideosPage() {
       : [];
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <h1 className="mb-8 text-2xl font-bold text-slate-900">
+    <div className="animate-fade-in">
+      <h1 className="mb-8 text-2xl font-bold tracking-tight gradient-text">
         Manage Videos
       </h1>
 
-      {/* Videos table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50">
+      <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
+        <table className="table-dark w-full">
+          <thead>
             <tr>
-              <th className="px-4 py-3 font-medium text-slate-600">Title</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Organization</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Visibility</th>
-              <th className="px-4 py-3 font-medium text-slate-600">CF Video ID</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Uploaded By</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Created</th>
+              <th>Title</th>
+              <th>Organization</th>
+              <th>Visibility</th>
+              <th>CF Video ID</th>
+              <th>Uploaded By</th>
+              <th>Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {videos.length === 0 ? (
               <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-8 text-center text-slate-400"
-                >
+                <td colSpan={6} className="text-center text-[var(--text-muted)]">
                   No videos registered yet
                 </td>
               </tr>
             ) : (
               videos.map((video) => (
-                <tr key={video.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">
-                    {video.title}
+                <tr key={video.id}>
+                  <td>
+                    <Link
+                      href={`/admin/videos/${video.id}`}
+                      className="font-medium text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
+                    >
+                      {video.title}
+                    </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {video.organization.name}
-                  </td>
-                  <td className="px-4 py-3">
+                  <td>{video.organization.name}</td>
+                  <td>
                     <VisibilityBadge visibility={video.visibility} />
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                  <td className="font-mono text-xs">
                     {video.cloudflareVideoId.length > 12
                       ? `${video.cloudflareVideoId.slice(0, 12)}...`
                       : video.cloudflareVideoId}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {video.uploadedBy.name}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">
+                  <td>{video.uploadedBy.name}</td>
+                  <td>
                     {new Date(video.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -98,9 +96,8 @@ export default async function AdminVideosPage() {
         </table>
       </div>
 
-      {/* Register video form */}
       <div className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">
+        <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
           Register a Video
         </h2>
         <RegisterVideoForm
@@ -114,15 +111,13 @@ export default async function AdminVideosPage() {
 
 function VisibilityBadge({ visibility }: { visibility: string }) {
   const styles: Record<string, string> = {
-    PUBLIC: 'bg-green-100 text-green-700',
-    ORG: 'bg-blue-100 text-blue-700',
-    PRIVATE: 'bg-slate-100 text-slate-600',
+    PUBLIC: 'badge-green',
+    ORG: 'badge-blue',
+    PRIVATE: 'badge-slate',
   };
 
   return (
-    <span
-      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${styles[visibility] ?? 'bg-slate-100 text-slate-600'}`}
-    >
+    <span className={`badge ${styles[visibility] ?? 'badge-slate'}`}>
       {visibility}
     </span>
   );

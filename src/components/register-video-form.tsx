@@ -60,17 +60,16 @@ export function RegisterVideoForm({ organizations, currentUserId }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-lg border border-slate-200 bg-white p-6"
+      className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6"
     >
       {error && (
-        <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg bg-[rgba(229,25,62,0.1)] border border-[rgba(229,25,62,0.2)] px-4 py-3 text-sm text-[var(--accent-hover)]">
           {error}
         </div>
       )}
 
-      {/* Title */}
       <div>
-        <label htmlFor="title" className="mb-1 block text-sm font-medium text-slate-700">
+        <label htmlFor="title" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
           Title
         </label>
         <input
@@ -79,29 +78,27 @@ export function RegisterVideoForm({ organizations, currentUserId }: Props) {
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           placeholder="Video title"
         />
       </div>
 
-      {/* Description */}
       <div>
-        <label htmlFor="description" className="mb-1 block text-sm font-medium text-slate-700">
-          Description <span className="text-slate-400">(optional)</span>
+        <label htmlFor="description" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+          Description <span className="text-[var(--text-muted)]">(optional)</span>
         </label>
         <textarea
           id="description"
           rows={3}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           placeholder="Brief description"
         />
       </div>
 
-      {/* Cloudflare Video ID */}
       <div>
-        <label htmlFor="cfVideoId" className="mb-1 block text-sm font-medium text-slate-700">
+        <label htmlFor="cfVideoId" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
           Cloudflare Video ID
         </label>
         <input
@@ -110,15 +107,14 @@ export function RegisterVideoForm({ organizations, currentUserId }: Props) {
           required
           value={cloudflareVideoId}
           onChange={(e) => setCloudflareVideoId(e.target.value)}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="input-dark w-full rounded-lg px-3.5 py-2.5 font-mono text-sm"
           placeholder="e.g. 5d5bc37ffcf54c9b82e996823bffbb81"
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {/* Organization */}
         <div>
-          <label htmlFor="orgId" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="orgId" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
             Organization
           </label>
           <select
@@ -126,7 +122,7 @@ export function RegisterVideoForm({ organizations, currentUserId }: Props) {
             required
             value={organizationId}
             onChange={(e) => setOrganizationId(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           >
             <option value="">Select organization</option>
             {organizations.map((org) => (
@@ -137,9 +133,8 @@ export function RegisterVideoForm({ organizations, currentUserId }: Props) {
           </select>
         </div>
 
-        {/* Visibility */}
         <div>
-          <label htmlFor="visibility" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="visibility" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
             Visibility
           </label>
           <select
@@ -147,7 +142,7 @@ export function RegisterVideoForm({ organizations, currentUserId }: Props) {
             required
             value={visibility}
             onChange={(e) => setVisibility(e.target.value as 'PUBLIC' | 'ORG' | 'PRIVATE')}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           >
             <option value="PUBLIC">Public</option>
             <option value="ORG">Organization</option>
@@ -156,17 +151,16 @@ export function RegisterVideoForm({ organizations, currentUserId }: Props) {
         </div>
       </div>
 
-      {/* Thumbnail URL */}
       <div>
-        <label htmlFor="thumbnailUrl" className="mb-1 block text-sm font-medium text-slate-700">
-          Thumbnail URL <span className="text-slate-400">(optional)</span>
+        <label htmlFor="thumbnailUrl" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+          Thumbnail URL <span className="text-[var(--text-muted)]">(optional)</span>
         </label>
         <input
           id="thumbnailUrl"
           type="url"
           value={thumbnailUrl}
           onChange={(e) => setThumbnailUrl(e.target.value)}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
           placeholder="https://..."
         />
       </div>
@@ -174,7 +168,7 @@ export function RegisterVideoForm({ organizations, currentUserId }: Props) {
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="btn-accent rounded-lg px-5 py-2.5 text-sm font-semibold"
       >
         {submitting ? 'Registering...' : 'Register Video'}
       </button>
