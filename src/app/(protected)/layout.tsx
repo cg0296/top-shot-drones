@@ -18,49 +18,32 @@ export default async function ProtectedLayout({
   const isPrivileged = user.role === 'ADMIN' || user.role === 'STAFF';
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-[200px] flex-col items-center border-r border-[var(--border)] bg-[var(--bg-secondary)] py-6">
-        {/* Logo */}
+    <div className="flex min-h-screen flex-col md:flex-row">
+      {/* Desktop Sidebar — hidden on mobile */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[200px] flex-col items-center border-r border-[var(--border)] bg-[var(--bg-secondary)] py-6 md:flex">
         <Link href="/dashboard" className="mb-2 transition-transform hover:scale-105">
           <div className="rounded-xl bg-white/90 p-2.5">
-            <Image
-              src="/tsd-logo.png"
-              alt="Top Shot Drones"
-              width={120}
-              height={120}
-            />
+            <Image src="/tsd-logo.png" alt="Top Shot Drones" width={120} height={120} />
           </div>
         </Link>
 
-        {/* Divider */}
         <div className="mb-4 h-px w-20 bg-[var(--border)]" />
 
-        {/* Navigation */}
         <nav className="flex flex-1 flex-col gap-1 w-full px-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
-          >
+          <Link href="/dashboard" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
             </svg>
             Dashboard
           </Link>
-          <Link
-            href="/videos"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
-          >
+          <Link href="/videos" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
             </svg>
             Videos
           </Link>
           {isPrivileged && (
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
-            >
+            <Link href="/admin" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -70,7 +53,6 @@ export default async function ProtectedLayout({
           )}
         </nav>
 
-        {/* Bottom: Clerk UserButton */}
         <div className="w-full border-t border-[var(--border)] px-3 pt-4">
           <div className="flex items-center gap-3 rounded-xl px-3 py-2">
             <UserButton />
@@ -82,12 +64,51 @@ export default async function ProtectedLayout({
         </div>
       </aside>
 
+      {/* Mobile top bar — visible on mobile only */}
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 md:hidden">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <div className="rounded-lg bg-white/90 p-1.5">
+            <Image src="/tsd-logo.png" alt="Top Shot Drones" width={28} height={28} />
+          </div>
+          <span className="text-sm font-semibold text-[var(--text-primary)]">Top Shot Drones</span>
+        </Link>
+        <UserButton />
+      </header>
+
       {/* Main content */}
-      <main className="ml-[200px] flex-1 min-h-screen bg-[var(--bg-primary)]">
-        <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
+      <main className="flex-1 min-h-screen bg-[var(--bg-primary)] md:ml-[200px]">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
           {children}
         </div>
       </main>
+
+      {/* Mobile bottom nav — visible on mobile only */}
+      <nav className="fixed bottom-0 inset-x-0 z-40 flex items-center justify-around border-t border-[var(--border)] bg-[var(--bg-secondary)] py-2 md:hidden">
+        <Link href="/dashboard" className="flex flex-col items-center gap-0.5 px-3 py-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+          </svg>
+          <span className="text-[10px]">Home</span>
+        </Link>
+        <Link href="/videos" className="flex flex-col items-center gap-0.5 px-3 py-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+          </svg>
+          <span className="text-[10px]">Videos</span>
+        </Link>
+        {isPrivileged && (
+          <Link href="/admin" className="flex flex-col items-center gap-0.5 px-3 py-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="text-[10px]">Admin</span>
+          </Link>
+        )}
+      </nav>
+
+      {/* Bottom padding spacer for mobile nav */}
+      <div className="h-16 md:hidden" />
     </div>
   );
 }
