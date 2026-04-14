@@ -53,8 +53,44 @@ model Organization {
 
   users     User[]
   videos    Video[]
+  seasons   Season[]
 
   @@map("organizations")
+}
+
+model Season {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String
+  organizationId String   @map("organization_id")
+  startDate      DateTime? @map("start_date")
+  endDate        DateTime? @map("end_date")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  games          Game[]
+
+  @@unique([organizationId, slug])
+  @@map("seasons")
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  seasonId  String   @map("season_id")
+  title     String
+  opponent  String?
+  homeAway  String?  @map("home_away")
+  playedAt  DateTime @map("played_at")
+  slug      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  season    Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  videos    Video[]
+
+  @@unique([seasonId, slug])
+  @@map("games")
 }
 
 model Video {
@@ -66,11 +102,14 @@ model Video {
   organizationId     String          @map("organization_id")
   uploadedByUserId   String          @map("uploaded_by_user_id")
   visibility         VideoVisibility @default(ORG)
+  gameId             String?         @map("game_id")
+  kind               String?
   createdAt          DateTime        @default(now()) @map("created_at")
   updatedAt          DateTime        @updatedAt @map("updated_at")
 
   organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   uploadedBy         User            @relation("UploadedBy", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  game               Game?           @relation(fields: [gameId], references: [id], onDelete: SetNull)
   videoAccess        VideoAccess[]
   comments           Comment[]
   reactions          Reaction[]

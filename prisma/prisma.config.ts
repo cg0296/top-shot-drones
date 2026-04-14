@@ -1,10 +1,14 @@
 import path from 'node:path';
-import { defineConfig } from 'prisma/config';
+import { config as loadEnv } from 'dotenv';
+import { defineConfig, env } from 'prisma/config';
+
+loadEnv({ path: path.resolve(__dirname, '..', '.env.local'), override: false });
+loadEnv({ path: path.resolve(__dirname, '..', '.env'), override: false });
 
 export default defineConfig({
   schema: path.join(__dirname, 'schema.prisma'),
   datasource: {
-    url: process.env.DATABASE_URL!,
+    url: env('DATABASE_URL'),
   },
   migrations: {
     seed: 'npx tsx prisma/seed.ts',

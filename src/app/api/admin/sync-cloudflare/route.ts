@@ -8,7 +8,7 @@ const CF_SUBDOMAIN = process.env.CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN;
 
 interface CfVideo {
   uid: string;
-  meta: { name?: string };
+  meta: Record<string, string> & { name?: string };
   duration: number;
   thumbnail: string;
   status: { state: string };
@@ -30,7 +30,6 @@ export async function POST() {
     );
   }
 
-  // Fetch all videos from Cloudflare Stream (paginated)
   const allVideos: CfVideo[] = [];
   let page = 1;
   while (true) {
@@ -48,42 +47,75 @@ export async function POST() {
 
   const ready = allVideos.filter((v) => v.status.state === 'ready');
 
-  // Determine the user's org (fallback to first org if admin has none)
-  let orgId = user.organizationId;
-  if (!orgId) {
+  // Fallback org for videos without meta.orgId
+  let fallbackOrgId = user.organizationId;
+  if (!fallbackOrgId) {
     const firstOrg = await db.organization.findFirst();
-    orgId = firstOrg?.id ?? null;
-  }
-  if (!orgId) {
-    return NextResponse.json(
-      { error: 'No organization found to assign videos to' },
-      { status: 400 },
-    );
+    fallbackOrgId = firstOrg?.id ?? null;
   }
 
   let imported = 0;
+  let updated = 0;
   let skipped = 0;
 
   for (const v of ready) {
+    const meta = v.meta || {};
     const title =
-      v.meta.name?.replace(/\.MOV$/i, '').replace(/_/g, ' ') ?? 'Untitled';
+      (meta.name || '').replace(/\.(MOV|MP4|mp4|mov)$/i, '').replace(/_/g, ' ') || 'Untitled';
     const thumbnailUrl = `https://customer-${CF_SUBDOMAIN}.cloudflarestream.com/${v.uid}/thumbnails/thumbnail.jpg`;
 
-    try {
-      await db.video.upsert({
-        where: { cloudflareVideoId: v.uid },
-        update: { thumbnailUrl },
-        create: {
-          title,
-          cloudflareVideoId: v.uid,
-          thumbnailUrl,
-          organizationId: orgId,
-          uploadedByUserId: user.id,
-          visibility: 'ORG',
-        },
+    // Resolve organization and game from meta if present
+    let orgId = meta.orgId && (await db.organization.findUnique({ where: { id: meta.orgId } }))
+      ? meta.orgId
+      : null;
+    let gameId: string | null = null;
+    if (meta.gameId) {
+      const game = await db.game.findUnique({
+        where: { id: meta.gameId },
+        include: { season: true },
       });
-      imported++;
-    } catch {
+      if (game) {
+        gameId = game.id;
+        if (!orgId) orgId = game.season.organizationId;
+      }
+    }
+    if (!orgId) orgId = fallbackOrgId;
+    if (!orgId) {
+      skipped++;
+      continue;
+    }
+
+    const kind = meta.kind || null;
+
+    try {
+      const existing = await db.video.findUnique({ where: { cloudflareVideoId: v.uid } });
+      if (existing) {
+        await db.video.update({
+          where: { cloudflareVideoId: v.uid },
+          data: {
+            thumbnailUrl,
+            ...(gameId && !existing.gameId ? { gameId } : {}),
+            ...(kind && !existing.kind ? { kind } : {}),
+          },
+        });
+        updated++;
+      } else {
+        await db.video.create({
+          data: {
+            title,
+            cloudflareVideoId: v.uid,
+            thumbnailUrl,
+            organizationId: orgId,
+            uploadedByUserId: user.id,
+            visibility: 'ORG',
+            gameId: gameId ?? undefined,
+            kind: kind ?? undefined,
+          },
+        });
+        imported++;
+      }
+    } catch (err) {
+      console.error('Sync error for', v.uid, err);
       skipped++;
     }
   }
@@ -92,6 +124,7 @@ export async function POST() {
     total: allVideos.length,
     ready: ready.length,
     imported,
+    updated,
     skipped,
   });
 }
