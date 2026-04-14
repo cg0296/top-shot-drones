@@ -8,6 +8,7 @@ import { db } from '@/lib/db';
 import { VideoAccessManager } from '@/components/video-access-manager';
 import DeleteVideoButton from '@/components/delete-video-button';
 import { EditGameForm } from '@/components/edit-game-form';
+import { EditVideoForm } from '@/components/edit-video-form';
 
 export async function generateMetadata({
   params,
@@ -58,6 +59,21 @@ export default async function AdminVideoDetailPage({
   ]);
 
   if (!video) notFound();
+
+  // Games available for this video's org (home or away team)
+  const availableGames = await db.game.findMany({
+    where: {
+      OR: [
+        { homeTeamId: video.organizationId },
+        { awayTeamId: video.organizationId },
+      ],
+    },
+    include: {
+      homeTeam: { select: { name: true } },
+      awayTeam: { select: { name: true } },
+    },
+    orderBy: { playedAt: 'desc' },
+  });
 
   if (user.role === 'STAFF' && !user.memberships.some((m) => m.organizationId === video.organizationId)) {
     redirect('/dashboard');
@@ -153,6 +169,27 @@ export default async function AdminVideoDetailPage({
             </dd>
           </div>
         </dl>
+      </div>
+
+      {/* Video editing */}
+      <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
+        Edit Video
+      </h2>
+      <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
+        <EditVideoForm
+          videoId={video.id}
+          initialTitle={video.title}
+          initialDescription={video.description ?? null}
+          initialVisibility={video.visibility}
+          initialGameId={video.gameId ?? null}
+          games={availableGames.map((g) => ({
+            id: g.id,
+            title: g.title,
+            playedAt: g.playedAt.toISOString(),
+            homeTeam: g.homeTeam,
+            awayTeam: g.awayTeam,
+          }))}
+        />
       </div>
 
       {/* Game editing */}
