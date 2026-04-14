@@ -45,7 +45,11 @@ export default async function DashboardPage() {
             OR: [
               { visibility: 'PUBLIC' as const },
               ...(user.organizationId
-                ? [{ organizationId: user.organizationId }]
+                ? [
+                    { organizationId: user.organizationId },
+                    { game: { homeTeamId: user.organizationId } },
+                    { game: { awayTeamId: user.organizationId } },
+                  ]
                 : []),
             ],
           };
