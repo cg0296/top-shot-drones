@@ -22,7 +22,7 @@ export default function DeleteVideoButton({
   async function handleDelete() {
     if (
       !confirm(
-        `Delete "${videoTitle}"? This removes it from Cloudflare Stream AND the database. This cannot be undone.`,
+        `Remove "${videoTitle}" from the app? The underlying Cloudflare Stream video stays intact — you can re-sync it later if needed.`,
       )
     ) {
       return;

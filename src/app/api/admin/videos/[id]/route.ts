@@ -22,33 +22,14 @@ export async function DELETE(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Delete from Cloudflare Stream first (best effort — continue if it fails)
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-  let cloudflareDeleted = false;
-  if (accountId && apiToken) {
-    try {
-      const res = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${video.cloudflareVideoId}`,
-        { method: 'DELETE', headers: { Authorization: `Bearer ${apiToken}` } },
-      );
-      cloudflareDeleted = res.ok || res.status === 404;
-      if (!cloudflareDeleted) {
-        console.error('Cloudflare delete failed:', video.cloudflareVideoId, res.status);
-      }
-    } catch (err) {
-      console.error('Cloudflare delete threw:', err);
-    }
-  }
-
-  // Delete DB rows — cascade handles comments/reactions/videoAccess via onDelete: Cascade
+  // App-only delete. The Cloudflare Stream asset is intentionally left in place —
+  // it can still be re-synced later. Never delete from Cloudflare here.
   await db.video.delete({ where: { id } });
 
   await logAction(user.id, 'VIDEO_DELETED', 'Video', id, {
     title: video.title,
     cloudflareVideoId: video.cloudflareVideoId,
-    cloudflareDeleted,
   });
 
-  return NextResponse.json({ ok: true, cloudflareDeleted });
+  return NextResponse.json({ ok: true });
 }
