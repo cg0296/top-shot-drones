@@ -363,35 +363,21 @@ function DashboardHeader({
         </span>
       </div>
 
-      {teams.length > 0 && (
+      {teams.filter((t) => t.hasGames !== false).length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {teams.map((t) => {
-            const disabled = t.hasGames === false;
-            if (disabled) {
-              return (
-                <span
-                  key={t.slug}
-                  title="No games yet"
-                  className="cursor-not-allowed rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-3 py-1 text-xs font-medium opacity-35 select-none text-[var(--text-muted)]"
-                >
-                  {t.name}
-                </span>
-              );
-            }
-            return (
-              <Link
-                key={t.slug}
-                href={`/dashboard?team=${t.slug}`}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                  t.active
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                }`}
-              >
-                {t.name}
-              </Link>
-            );
-          })}
+          {teams.filter((t) => t.hasGames !== false).map((t) => (
+            <Link
+              key={t.slug}
+              href={`/dashboard?team=${t.slug}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                t.active
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+              }`}
+            >
+              {t.name}
+            </Link>
+          ))}
         </div>
       )}
     </div>
