@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import CreateOrgForm from '@/components/create-org-form';
+import DeleteOrgButton from '@/components/delete-org-button';
 
 export const metadata = {
   title: 'Manage Organizations — Top Shot Drones',
@@ -43,6 +44,7 @@ export default async function AdminOrganizationsPage() {
                 <th>Users</th>
                 <th>Videos</th>
                 <th>Created</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -58,6 +60,14 @@ export default async function AdminOrganizationsPage() {
                       day: 'numeric',
                       year: 'numeric',
                     })}
+                  </td>
+                  <td className="text-right">
+                    <DeleteOrgButton
+                      orgId={org.id}
+                      orgName={org.name}
+                      memberCount={org._count.memberships}
+                      videoCount={org._count.videos}
+                    />
                   </td>
                 </tr>
               ))}
