@@ -29,11 +29,9 @@ model User {
   email           String        @unique
   passwordHash    String        @map("password_hash")
   role            Role          @default(CUSTOMER)
-  organizationId  String?       @map("organization_id")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   memberships     OrganizationMembership[]
   sessions        Session[]
   videoAccess     VideoAccess[]
@@ -67,7 +65,6 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users       User[]
   memberships OrganizationMembership[]
   videos      Video[]
   seasons     Season[]

@@ -49,7 +49,7 @@ export default async function AdminVideoDetailPage({
 
   if (!video) notFound();
 
-  if (user.role === 'STAFF' && video.organizationId !== user.organizationId) {
+  if (user.role === 'STAFF' && !user.memberships.some((m) => m.organizationId === video.organizationId)) {
     redirect('/dashboard');
   }
 
@@ -63,7 +63,7 @@ export default async function AdminVideoDetailPage({
 
   const eligibleUsers = await db.user.findMany({
     where: {
-      organizationId: video.organizationId,
+      memberships: { some: { organizationId: video.organizationId } },
       id: { notIn: grantedUserIds.length > 0 ? grantedUserIds : undefined },
     },
     select: { id: true, name: true, email: true },

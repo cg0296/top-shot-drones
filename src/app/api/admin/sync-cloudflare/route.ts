@@ -91,7 +91,10 @@ export async function POST() {
 
   const ready = allVideos.filter((v) => v.status.state === 'ready');
 
-  let fallbackOrgId = user.organizationId;
+  let fallbackOrgId: string | null =
+    user.memberships.find((m) => m.isDefault)?.organizationId ??
+    user.memberships[0]?.organizationId ??
+    null;
   if (!fallbackOrgId) {
     const firstOrg = await db.organization.findFirst();
     fallbackOrgId = firstOrg?.id ?? null;

@@ -65,7 +65,7 @@ export default async function DashboardPage() {
     db.video.count({ where: videoWhere }),
     isAdmin
       ? db.organization.findMany({
-          include: { _count: { select: { users: true, videos: true } } },
+          include: { _count: { select: { memberships: true, videos: true } } },
         })
       : Promise.resolve(null),
   ]);
@@ -139,7 +139,7 @@ export default async function DashboardPage() {
           <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
             <div className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Total Users</div>
             <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
-              {orgStats.reduce((sum, o) => sum + o._count.users, 0)}
+              {orgStats.reduce((sum, o) => sum + o._count.memberships, 0)}
             </div>
           </div>
           <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">

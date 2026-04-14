@@ -35,7 +35,7 @@ async function main() {
       email: 'admin@topshot.dev',
       passwordHash,
       role: 'ADMIN',
-      organizationId: topShot.id,
+      memberships: { create: { organizationId: topShot.id, role: 'ADMIN', isDefault: true } },
     },
   });
 
@@ -48,7 +48,7 @@ async function main() {
       email: 'staff@topshot.dev',
       passwordHash,
       role: 'STAFF',
-      organizationId: topShot.id,
+      memberships: { create: { organizationId: topShot.id, role: 'STAFF', isDefault: true } },
     },
   });
 
@@ -61,7 +61,7 @@ async function main() {
       email: 'customer@acme.dev',
       passwordHash,
       role: 'CUSTOMER',
-      organizationId: acme.id,
+      memberships: { create: { organizationId: acme.id, role: 'CUSTOMER', isDefault: true } },
     },
   });
 
@@ -74,7 +74,7 @@ async function main() {
       email: 'viewer@acme.dev',
       passwordHash,
       role: 'VIEWER',
-      organizationId: acme.id,
+      memberships: { create: { organizationId: acme.id, role: 'VIEWER', isDefault: true } },
     },
   });
 

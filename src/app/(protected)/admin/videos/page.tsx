@@ -18,9 +18,10 @@ export default async function AdminVideosPage() {
   if (user.role !== 'ADMIN' && user.role !== 'STAFF') redirect('/dashboard');
 
   const isAdmin = user.role === 'ADMIN';
+  const orgIds = user.memberships.map((m) => m.organizationId);
 
   const videos = await db.video.findMany({
-    where: isAdmin ? {} : { organizationId: user.organizationId! },
+    where: isAdmin ? {} : { organizationId: { in: orgIds } },
     include: { organization: true, uploadedBy: true },
     orderBy: { createdAt: 'desc' },
   });
@@ -30,10 +31,11 @@ export default async function AdminVideosPage() {
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
       })
-    : user.organizationId
+    : orgIds.length
       ? await db.organization.findMany({
-          where: { id: user.organizationId },
+          where: { id: { in: orgIds } },
           select: { id: true, name: true },
+          orderBy: { name: 'asc' },
         })
       : [];
 

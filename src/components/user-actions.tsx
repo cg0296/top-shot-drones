@@ -7,20 +7,17 @@ interface User {
   name: string;
   email: string;
   role: string;
-  organizationId: string | null;
 }
 
 interface Props {
   user: User;
-  organizations: { id: string; name: string }[];
   currentUserId: string;
 }
 
 const ROLES = ['ADMIN', 'STAFF', 'CUSTOMER', 'VIEWER'] as const;
 
-export default function UserActions({ user, organizations, currentUserId }: Props) {
+export default function UserActions({ user, currentUserId }: Props) {
   const [changingRole, setChangingRole] = useState(false);
-  const [changingOrg, setChangingOrg] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const isSelf = user.id === currentUserId;
@@ -39,32 +36,8 @@ export default function UserActions({ user, organizations, currentUserId }: Prop
       if (res.ok) {
         window.location.reload();
       }
-    } catch {
-      // silently fail — reload won't happen so user sees no change
     } finally {
       setChangingRole(false);
-    }
-  }
-
-  async function handleOrgChange(newOrgId: string) {
-    const organizationId = newOrgId === '' ? null : newOrgId;
-    if (organizationId === user.organizationId) return;
-    setChangingOrg(true);
-
-    try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationId }),
-      });
-
-      if (res.ok) {
-        window.location.reload();
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setChangingOrg(false);
     }
   }
 
@@ -80,8 +53,6 @@ export default function UserActions({ user, organizations, currentUserId }: Prop
       if (res.ok) {
         window.location.reload();
       }
-    } catch {
-      // silently fail
     } finally {
       setDeleting(false);
     }
@@ -89,12 +60,12 @@ export default function UserActions({ user, organizations, currentUserId }: Prop
 
   return (
     <div className="flex items-center gap-2">
-      {/* Role selector */}
       <select
         value={user.role}
         onChange={(e) => handleRoleChange(e.target.value)}
         disabled={isSelf || changingRole}
         className="input-dark rounded-md px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+        title="Global role"
       >
         {ROLES.map((r) => (
           <option key={r} value={r}>
@@ -103,22 +74,6 @@ export default function UserActions({ user, organizations, currentUserId }: Prop
         ))}
       </select>
 
-      {/* Organization selector */}
-      <select
-        value={user.organizationId ?? ''}
-        onChange={(e) => handleOrgChange(e.target.value)}
-        disabled={changingOrg}
-        className="input-dark rounded-md px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <option value="">None</option>
-        {organizations.map((org) => (
-          <option key={org.id} value={org.id}>
-            {org.name}
-          </option>
-        ))}
-      </select>
-
-      {/* Delete button */}
       <button
         onClick={handleDelete}
         disabled={isSelf || deleting}

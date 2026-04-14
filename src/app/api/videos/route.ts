@@ -37,9 +37,16 @@ export async function GET(request: NextRequest) {
 
     case 'STAFF':
     case 'CUSTOMER': {
-      if (!user.organizationId) return NextResponse.json([]);
+      const orgIds = user.memberships.map((m) => m.organizationId);
+      if (orgIds.length === 0) return NextResponse.json([]);
       const videos = await db.video.findMany({
-        where: { organizationId: user.organizationId },
+        where: {
+          OR: [
+            { organizationId: { in: orgIds } },
+            { game: { homeTeamId: { in: orgIds } } },
+            { game: { awayTeamId: { in: orgIds } } },
+          ],
+        },
         select: videoSelect,
         orderBy: { createdAt: 'desc' },
       });

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   if (
     user.role !== 'ADMIN' &&
-    user.organizationId !== season.organizationId
+    !user.memberships.some((m) => m.organizationId === season.organizationId)
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
   if (!homeTeam) return NextResponse.json({ error: 'Home team not found' }, { status: 404 });
   if (awayTeamId && !awayTeam) return NextResponse.json({ error: 'Away team not found' }, { status: 404 });
 
-  if (user.role === 'STAFF' && user.organizationId !== season.organizationId) {
+  if (user.role === 'STAFF' && !user.memberships.some((m) => m.organizationId === season.organizationId)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

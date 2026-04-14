@@ -57,14 +57,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  // Pre-create the user in our database so role/org/access are ready when they sign up
+  // Pre-create the user and their team membership so role/org/access are ready when they sign up
   const newUser = await db.user.create({
     data: {
       name: email.split('@')[0],
       email,
       passwordHash: 'clerk-managed',
       role,
-      organizationId,
+      memberships: {
+        create: {
+          organizationId,
+          role,
+          isDefault: true,
+        },
+      },
     },
   });
 

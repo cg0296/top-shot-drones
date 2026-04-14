@@ -18,6 +18,7 @@ export async function GET(
     include: {
       organization: true,
       uploadedBy: true,
+      game: true,
     },
   });
 
@@ -25,14 +26,17 @@ export async function GET(
     return NextResponse.json({ error: 'Video not found' }, { status: 404 });
   }
 
-  // Authorization
   const role = user.role;
+  const orgIds = user.memberships.map((m) => m.organizationId);
   let authorized = false;
 
   if (role === 'ADMIN') {
     authorized = true;
   } else if (role === 'STAFF' || role === 'CUSTOMER') {
-    authorized = video.organizationId === user.organizationId;
+    authorized =
+      orgIds.includes(video.organizationId) ||
+      (video.game?.homeTeamId ? orgIds.includes(video.game.homeTeamId) : false) ||
+      (video.game?.awayTeamId ? orgIds.includes(video.game.awayTeamId) : false);
   } else if (role === 'VIEWER') {
     const access = await db.videoAccess.findUnique({
       where: {

@@ -17,7 +17,7 @@ export default async function AdminOrganizationsPage() {
   const organizations = await db.organization.findMany({
     include: {
       _count: {
-        select: { users: true, videos: true },
+        select: { memberships: true, videos: true },
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -50,7 +50,7 @@ export default async function AdminOrganizationsPage() {
                 <tr key={org.id}>
                   <td className="font-medium text-[var(--text-primary)]">{org.name}</td>
                   <td className="font-mono text-xs">{org.slug}</td>
-                  <td>{org._count.users}</td>
+                  <td>{org._count.memberships}</td>
                   <td>{org._count.videos}</td>
                   <td>
                     {new Date(org.createdAt).toLocaleDateString('en-US', {

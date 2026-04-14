@@ -12,11 +12,15 @@ export default async function UploadPage() {
   if (!user) redirect('/sign-in');
   if (user.role !== 'ADMIN' && user.role !== 'STAFF') redirect('/dashboard');
 
+  const orgIds = user.memberships.map((m) => m.organizationId);
   const organizations =
     user.role === 'ADMIN'
       ? await db.organization.findMany({ orderBy: { name: 'asc' } })
-      : user.organizationId
-      ? await db.organization.findMany({ where: { id: user.organizationId } })
+      : orgIds.length
+      ? await db.organization.findMany({
+          where: { id: { in: orgIds } },
+          orderBy: { name: 'asc' },
+        })
       : [];
 
   return (

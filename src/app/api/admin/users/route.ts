@@ -10,7 +10,7 @@ const createUserSchema = z.object({
   email: z.email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   role: z.enum(['ADMIN', 'STAFF', 'CUSTOMER', 'VIEWER']),
-  organizationId: z.string().min(1, 'Organization is required'),
+  organizationId: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -53,7 +53,17 @@ export async function POST(request: Request) {
       email,
       passwordHash,
       role,
-      organizationId,
+      ...(organizationId
+        ? {
+            memberships: {
+              create: {
+                organizationId,
+                role,
+                isDefault: true,
+              },
+            },
+          }
+        : {}),
     },
   });
 

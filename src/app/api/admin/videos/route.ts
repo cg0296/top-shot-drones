@@ -36,10 +36,9 @@ export async function POST(request: NextRequest) {
   const { title, description, cloudflareVideoId, organizationId, visibility, thumbnailUrl } =
     parsed.data;
 
-  // STAFF can only create videos in their own organization
-  if (user.role === 'STAFF' && organizationId !== user.organizationId) {
+  if (user.role === 'STAFF' && !user.memberships.some((m) => m.organizationId === organizationId)) {
     return NextResponse.json(
-      { error: 'You can only register videos in your own organization' },
+      { error: 'You can only register videos in teams you belong to' },
       { status: 403 },
     );
   }

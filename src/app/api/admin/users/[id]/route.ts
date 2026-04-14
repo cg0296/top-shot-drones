@@ -6,7 +6,6 @@ import { logAction } from '@/lib/audit';
 
 const updateUserSchema = z.object({
   role: z.enum(['ADMIN', 'STAFF', 'CUSTOMER', 'VIEWER']).optional(),
-  organizationId: z.string().nullable().optional(),
 });
 
 export async function PATCH(
@@ -42,27 +41,22 @@ export async function PATCH(
     );
   }
 
-  const { role, organizationId } = result.data;
+  const { role } = result.data;
 
   const updatedUser = await db.user.update({
     where: { id },
     data: {
       ...(role !== undefined && { role }),
-      ...(organizationId !== undefined && { organizationId }),
     },
     select: {
       id: true,
       name: true,
       email: true,
       role: true,
-      organizationId: true,
     },
   });
 
-  await logAction(currentUser.id, 'USER_UPDATED', 'User', id, {
-    role,
-    organizationId,
-  });
+  await logAction(currentUser.id, 'USER_UPDATED', 'User', id, { role });
 
   return NextResponse.json(updatedUser);
 }

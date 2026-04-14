@@ -51,11 +51,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'homeTeamId or gameId is required' }, { status: 400 });
   }
 
-  // STAFF restriction: can only upload for their own team
+  // STAFF restriction: can only upload for teams they belong to
+  const staffOrgIds = user.memberships.map((m) => m.organizationId);
   if (
     user.role === 'STAFF' &&
-    user.organizationId !== homeTeamId &&
-    user.organizationId !== awayTeamId
+    !staffOrgIds.includes(homeTeamId) &&
+    (!awayTeamId || !staffOrgIds.includes(awayTeamId))
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

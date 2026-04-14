@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Video not found" }, { status: 404 });
   }
 
-  if (user.role === "STAFF" && video.organizationId !== user.organizationId) {
+  if (user.role === "STAFF" && !user.memberships.some((m) => m.organizationId === video.organizationId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -88,7 +88,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Video not found" }, { status: 404 });
   }
 
-  if (user.role === "STAFF" && video.organizationId !== user.organizationId) {
+  if (user.role === "STAFF" && !user.memberships.some((m) => m.organizationId === video.organizationId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

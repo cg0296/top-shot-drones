@@ -16,8 +16,6 @@ interface User {
   name: string;
   email: string;
   role: string;
-  organizationId: string | null;
-  organizationName: string | null;
   memberships: Membership[];
   createdAt: string;
 }
@@ -140,9 +138,7 @@ export default function UserTable({
                       name: u.name,
                       email: u.email,
                       role: u.role,
-                      organizationId: u.organizationId,
                     }}
-                    organizations={organizations}
                     currentUserId={currentUserId}
                   />
                 </td>

@@ -18,7 +18,6 @@ export async function getOrCreateDbUser() {
   let dbUser = await db.user.findUnique({
     where: { email },
     include: {
-      organization: true,
       memberships: { include: { organization: true } },
     },
   });
@@ -36,7 +35,6 @@ export async function getOrCreateDbUser() {
       role,
     },
     include: {
-      organization: true,
       memberships: { include: { organization: true } },
     },
   });

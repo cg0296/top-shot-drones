@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   const orgId = request.nextUrl.searchParams.get('organizationId');
   if (!orgId) return NextResponse.json({ error: 'organizationId required' }, { status: 400 });
 
-  if (user.role !== 'ADMIN' && user.organizationId !== orgId) {
+  if (user.role !== 'ADMIN' && !user.memberships.some((m) => m.organizationId === orgId)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   const { name, organizationId, startDate, endDate } = parsed.data;
   const slug = parsed.data.slug ? slugify(parsed.data.slug) : slugify(name);
 
-  if (user.role === 'STAFF' && user.organizationId !== organizationId) {
+  if (user.role === 'STAFF' && !user.memberships.some((m) => m.organizationId === organizationId)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
