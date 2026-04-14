@@ -15,7 +15,8 @@ export default async function GameVideosPage({ params }: Props) {
   const org = await db.organization.findUnique({ where: { slug: orgSlug } });
   if (!org) notFound();
 
-  if (user.role !== 'ADMIN' && user.organizationId !== org.id) {
+  const orgIds = user.memberships.map((m) => m.organizationId);
+  if (user.role !== 'ADMIN' && !orgIds.includes(org.id)) {
     redirect('/orgs');
   }
 
@@ -32,7 +33,7 @@ export default async function GameVideosPage({ params }: Props) {
   });
   if (!game) notFound();
 
-  // Access: user's org must be a participant
+  // Access: viewed team must be a participant
   if (
     user.role !== 'ADMIN' &&
     game.homeTeamId !== org.id &&

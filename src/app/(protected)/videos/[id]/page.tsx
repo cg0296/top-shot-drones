@@ -54,12 +54,14 @@ export default async function VideoDetailPage({ params }: Props) {
         authorized = true;
         break;
       case 'STAFF':
-      case 'CUSTOMER':
+      case 'CUSTOMER': {
+        const orgIds = user.memberships.map((m) => m.organizationId);
         authorized =
-          video.organizationId === user.organizationId ||
-          video.game?.homeTeamId === user.organizationId ||
-          video.game?.awayTeamId === user.organizationId;
+          orgIds.includes(video.organizationId) ||
+          (video.game?.homeTeamId ? orgIds.includes(video.game.homeTeamId) : false) ||
+          (video.game?.awayTeamId ? orgIds.includes(video.game.awayTeamId) : false);
         break;
+      }
       case 'VIEWER': {
         const access = await db.videoAccess.findUnique({
           where: {

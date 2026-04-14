@@ -2,6 +2,14 @@
 
 import { useState } from 'react';
 import UserActions from '@/components/user-actions';
+import UserMemberships from '@/components/user-memberships';
+
+interface Membership {
+  organizationId: string;
+  role: string;
+  isDefault: boolean;
+  organization: { id: string; name: string };
+}
 
 interface User {
   id: string;
@@ -10,6 +18,7 @@ interface User {
   role: string;
   organizationId: string | null;
   organizationName: string | null;
+  memberships: Membership[];
   createdAt: string;
 }
 
@@ -46,13 +55,12 @@ export default function UserTable({
       }
     }
     if (roleFilter && u.role !== roleFilter) return false;
-    if (orgFilter && u.organizationId !== orgFilter) return false;
+    if (orgFilter && !u.memberships.some((m) => m.organizationId === orgFilter)) return false;
     return true;
   });
 
   return (
     <div>
-      {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <input
           type="text"
@@ -77,7 +85,7 @@ export default function UserTable({
           onChange={(e) => setOrgFilter(e.target.value)}
           className="input-dark rounded-lg px-3 py-2 text-sm"
         >
-          <option value="">All Organizations</option>
+          <option value="">All Teams</option>
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>{org.name}</option>
           ))}
@@ -95,15 +103,14 @@ export default function UserTable({
         </span>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
         <table className="table-dark min-w-full">
           <thead>
             <tr>
               <th>Name</th>
               <th>Email</th>
-              <th>Role</th>
-              <th>Organization</th>
+              <th>Global Role</th>
+              <th>Teams</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -118,7 +125,13 @@ export default function UserTable({
                     {u.role}
                   </span>
                 </td>
-                <td>{u.organizationName ?? '—'}</td>
+                <td style={{ minWidth: 280 }}>
+                  <UserMemberships
+                    userId={u.id}
+                    memberships={u.memberships}
+                    organizations={organizations}
+                  />
+                </td>
                 <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td>
                   <UserActions

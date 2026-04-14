@@ -3,38 +3,31 @@ import { db } from '@/lib/db';
 
 /**
  * Get or create a database user from the current Clerk session.
- * On first sign-in, creates a User row linked to the Clerk user ID.
- * Returns the full database user with organization relation.
+ * Returns the user with their organization memberships loaded.
  */
 export async function getOrCreateDbUser() {
   const clerkUser = await currentUser();
   if (!clerkUser) return null;
 
-  const email =
-    clerkUser.emailAddresses[0]?.emailAddress ?? '';
+  const email = clerkUser.emailAddresses[0]?.emailAddress ?? '';
   const name =
     [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
     email.split('@')[0] ||
     'User';
 
-  // Look up by email first (handles existing seeded users)
   let dbUser = await db.user.findUnique({
     where: { email },
-    include: { organization: true },
+    include: {
+      organization: true,
+      memberships: { include: { organization: true } },
+    },
   });
 
-  if (dbUser) {
-    return dbUser;
-  }
+  if (dbUser) return dbUser;
 
-  // Emails that should be granted ADMIN on first sign-up
-  const adminEmails = [
-    'wparker@topshotdrones.net',
-  ];
-
+  const adminEmails = ['wparker@topshotdrones.net'];
   const role = adminEmails.includes(email.toLowerCase()) ? 'ADMIN' : 'CUSTOMER';
 
-  // Create a new user — default to CUSTOMER role, no org
   dbUser = await db.user.create({
     data: {
       name,
@@ -42,7 +35,10 @@ export async function getOrCreateDbUser() {
       passwordHash: 'clerk-managed',
       role,
     },
-    include: { organization: true },
+    include: {
+      organization: true,
+      memberships: { include: { organization: true } },
+    },
   });
 
   return dbUser;

@@ -15,7 +15,8 @@ export default async function OrgSeasonsPage({ params }: Props) {
   const org = await db.organization.findUnique({ where: { slug: orgSlug } });
   if (!org) notFound();
 
-  if (user.role !== 'ADMIN' && user.organizationId !== org.id) {
+  const orgIds = user.memberships.map((m) => m.organizationId);
+  if (user.role !== 'ADMIN' && !orgIds.includes(org.id)) {
     redirect('/orgs');
   }
 

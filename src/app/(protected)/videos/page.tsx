@@ -14,6 +14,8 @@ export default async function VideosPage() {
 
   if (!user) redirect('/sign-in');
 
+  const orgIds = user.memberships.map((m) => m.organizationId);
+
   const videos = await (async () => {
     switch (user.role) {
       case 'ADMIN':
@@ -28,11 +30,11 @@ export default async function VideosPage() {
           where: {
             OR: [
               { visibility: 'PUBLIC' },
-              ...(user.organizationId
+              ...(orgIds.length
                 ? [
-                    { organizationId: user.organizationId },
-                    { game: { homeTeamId: user.organizationId } },
-                    { game: { awayTeamId: user.organizationId } },
+                    { organizationId: { in: orgIds } },
+                    { game: { homeTeamId: { in: orgIds } } },
+                    { game: { awayTeamId: { in: orgIds } } },
                   ]
                 : []),
             ],
@@ -59,7 +61,7 @@ export default async function VideosPage() {
   })();
 
   if (videos.length === 0) {
-    const noOrg = !user.organizationId && user.role !== 'ADMIN';
+    const noOrg = orgIds.length === 0 && user.role !== 'ADMIN';
     return (
       <div className="animate-fade-in">
         <h1 className="mb-8 text-2xl font-bold tracking-tight gradient-text">Videos</h1>

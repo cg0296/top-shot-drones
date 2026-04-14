@@ -30,7 +30,8 @@ export default async function DashboardPage() {
   const isAdmin = user.role === 'ADMIN';
   const isPrivileged = isAdmin || user.role === 'STAFF';
 
-  // Build video query based on role
+  const orgIds = user.memberships.map((m) => m.organizationId);
+
   const videoWhere =
     user.role === 'ADMIN'
       ? {}
@@ -44,11 +45,11 @@ export default async function DashboardPage() {
         : {
             OR: [
               { visibility: 'PUBLIC' as const },
-              ...(user.organizationId
+              ...(orgIds.length
                 ? [
-                    { organizationId: user.organizationId },
-                    { game: { homeTeamId: user.organizationId } },
-                    { game: { awayTeamId: user.organizationId } },
+                    { organizationId: { in: orgIds } },
+                    { game: { homeTeamId: { in: orgIds } } },
+                    { game: { awayTeamId: { in: orgIds } } },
                   ]
                 : []),
             ],
@@ -73,7 +74,7 @@ export default async function DashboardPage() {
 
   // No content state
   if (videos.length === 0) {
-    const noOrg = !user.organizationId && user.role !== 'ADMIN';
+    const noOrg = orgIds.length === 0 && user.role !== 'ADMIN';
     return (
       <div className="animate-fade-in">
         <div className="mb-8">
@@ -120,7 +121,7 @@ export default async function DashboardPage() {
         </h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          {user.organization && ` · ${user.organization.name}`}
+          {user.memberships.length > 0 && ` · ${user.memberships.map((m) => m.organization.name).join(' · ')}`}
         </p>
       </div>
 

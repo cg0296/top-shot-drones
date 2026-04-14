@@ -34,6 +34,7 @@ model User {
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
   organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  memberships     OrganizationMembership[]
   sessions        Session[]
   videoAccess     VideoAccess[]
   uploadedVideos  Video[]       @relation("UploadedBy")
@@ -44,6 +45,21 @@ model User {
   @@map("users")
 }
 
+model OrganizationMembership {
+  userId         String   @map("user_id")
+  organizationId String   @map("organization_id")
+  role           Role     @default(CUSTOMER)
+  isDefault      Boolean  @default(false) @map("is_default")
+  joinedAt       DateTime @default(now()) @map("joined_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, organizationId])
+  @@index([organizationId])
+  @@map("organization_memberships")
+}
+
 model Organization {
   id        String   @id @default(cuid())
   name      String
@@ -51,11 +67,12 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users     User[]
-  videos    Video[]
-  seasons   Season[]
-  homeGames Game[]   @relation("HomeGames")
-  awayGames Game[]   @relation("AwayGames")
+  users       User[]
+  memberships OrganizationMembership[]
+  videos      Video[]
+  seasons     Season[]
+  homeGames   Game[]   @relation("HomeGames")
+  awayGames   Game[]   @relation("AwayGames")
 
   @@map("organizations")
 }

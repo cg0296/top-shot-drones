@@ -11,11 +11,15 @@ export default async function OrgsIndexPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/sign-in');
 
+  const orgIds = user.memberships.map((m) => m.organizationId);
   const orgs =
     user.role === 'ADMIN'
       ? await db.organization.findMany({ orderBy: { name: 'asc' } })
-      : user.organizationId
-      ? await db.organization.findMany({ where: { id: user.organizationId } })
+      : orgIds.length
+      ? await db.organization.findMany({
+          where: { id: { in: orgIds } },
+          orderBy: { name: 'asc' },
+        })
       : [];
 
   if (orgs.length === 0) {

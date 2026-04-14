@@ -18,7 +18,10 @@ export default async function AdminUsersPage() {
 
   const [users, organizations, videos] = await Promise.all([
     db.user.findMany({
-      include: { organization: true },
+      include: {
+        organization: true,
+        memberships: { include: { organization: true } },
+      },
       orderBy: { createdAt: 'desc' },
     }),
     db.organization.findMany({
@@ -38,6 +41,12 @@ export default async function AdminUsersPage() {
     role: u.role,
     organizationId: u.organizationId,
     organizationName: u.organization?.name ?? null,
+    memberships: u.memberships.map((m) => ({
+      organizationId: m.organizationId,
+      role: m.role,
+      isDefault: m.isDefault,
+      organization: { id: m.organization.id, name: m.organization.name },
+    })),
     createdAt: u.createdAt.toISOString(),
   }));
 
