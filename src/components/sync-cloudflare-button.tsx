@@ -19,16 +19,22 @@ export function SyncCloudflareButton() {
 
     try {
       const res = await fetch('/api/admin/sync-cloudflare', { method: 'POST' });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? 'Sync failed');
+      const text = await res.text();
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        setError(`Server error (${res.status}): ${text.slice(0, 200)}`);
         return;
       }
-      const data = await res.json();
-      setResult(data);
+      if (!res.ok) {
+        setError((data.error as string) ?? `Sync failed (${res.status})`);
+        return;
+      }
+      setResult(data as never);
       setTimeout(() => window.location.reload(), 1500);
-    } catch {
-      setError('Failed to connect');
+    } catch (err) {
+      setError(`Network error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }

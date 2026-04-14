@@ -66,6 +66,7 @@ async function upsertGame(
 }
 
 export async function POST() {
+  try {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -81,6 +82,11 @@ export async function POST() {
       `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/stream?per_page=100&page=${page}`,
       { headers: { Authorization: `Bearer ${CF_API_TOKEN}` } },
     );
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('Cloudflare API error:', res.status, errText);
+      return NextResponse.json({ error: `Cloudflare API error: ${res.status}` }, { status: 502 });
+    }
     const data = await res.json();
     const videos = data.result as CfVideo[];
     if (!videos || videos.length === 0) break;
@@ -208,4 +214,9 @@ export async function POST() {
     updated,
     skipped,
   });
+  } catch (err) {
+    console.error('Sync route unhandled error:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Sync failed: ${message}` }, { status: 500 });
+  }
 }
