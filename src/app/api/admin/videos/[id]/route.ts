@@ -8,6 +8,7 @@ const updateVideoSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional().nullable(),
   visibility: z.enum(['PUBLIC', 'ORG', 'PRIVATE']),
+  organizationId: z.string().min(1, 'Organization is required'),
   gameId: z.string().optional().nullable(),
 });
 
@@ -38,7 +39,16 @@ export async function PUT(
     );
   }
 
-  const { title, description, visibility, gameId } = result.data;
+  const { title, description, visibility, organizationId, gameId } = result.data;
+
+  // Verify the target org exists
+  const org = await db.organization.findUnique({ where: { id: organizationId } });
+  if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+
+  // STAFF may only assign to orgs they belong to
+  if (user.role === 'STAFF' && !user.memberships.some((m) => m.organizationId === organizationId)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   // If a gameId is provided, verify it exists
   if (gameId) {
@@ -52,6 +62,7 @@ export async function PUT(
       title: title.trim(),
       description: description?.trim() || null,
       visibility,
+      organizationId,
       gameId: gameId || null,
     },
   });

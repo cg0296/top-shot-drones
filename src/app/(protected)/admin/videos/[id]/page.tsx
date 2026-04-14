@@ -181,7 +181,9 @@ export default async function AdminVideoDetailPage({
           initialTitle={video.title}
           initialDescription={video.description ?? null}
           initialVisibility={video.visibility}
+          initialOrganizationId={video.organizationId}
           initialGameId={video.gameId ?? null}
+          organizations={allOrgs}
           games={availableGames.map((g) => ({
             id: g.id,
             title: g.title,

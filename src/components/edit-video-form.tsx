@@ -10,12 +10,19 @@ interface Game {
   awayTeam: { name: string } | null;
 }
 
+interface Org {
+  id: string;
+  name: string;
+}
+
 interface Props {
   videoId: string;
   initialTitle: string;
   initialDescription: string | null;
   initialVisibility: 'PUBLIC' | 'ORG' | 'PRIVATE';
+  initialOrganizationId: string;
   initialGameId: string | null;
+  organizations: Org[];
   games: Game[];
 }
 
@@ -24,12 +31,15 @@ export function EditVideoForm({
   initialTitle,
   initialDescription,
   initialVisibility,
+  initialOrganizationId,
   initialGameId,
+  organizations,
   games,
 }: Props) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription ?? '');
   const [visibility, setVisibility] = useState(initialVisibility);
+  const [organizationId, setOrganizationId] = useState(initialOrganizationId);
   const [gameId, setGameId] = useState(initialGameId ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -48,6 +58,7 @@ export function EditVideoForm({
           title: title.trim(),
           description: description.trim() || null,
           visibility,
+          organizationId,
           gameId: gameId || null,
         }),
       });
@@ -101,6 +112,21 @@ export function EditVideoForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+            Organization
+          </label>
+          <select
+            value={organizationId}
+            onChange={(e) => setOrganizationId(e.target.value)}
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
+          >
+            {organizations.map((o) => (
+              <option key={o.id} value={o.id}>{o.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
             Visibility
           </label>
           <select
@@ -113,7 +139,9 @@ export function EditVideoForm({
             <option value="PRIVATE">Private — explicit grants only</option>
           </select>
         </div>
+      </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
             Linked Game <span className="normal-case font-normal text-[var(--text-muted)]">(optional)</span>
