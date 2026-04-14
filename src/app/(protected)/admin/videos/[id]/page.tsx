@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import { VideoAccessManager } from '@/components/video-access-manager';
+import DeleteVideoButton from '@/components/delete-video-button';
 
 export async function generateMetadata({
   params,
@@ -93,9 +94,17 @@ export default async function AdminVideoDetailPage({
 
       {/* Video metadata */}
       <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
-        <h1 className="mb-5 text-2xl font-bold text-[var(--text-primary)]">
-          {video.title}
-        </h1>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+            {video.title}
+          </h1>
+          <DeleteVideoButton
+            videoId={video.id}
+            videoTitle={video.title}
+            redirectTo="/admin/videos"
+            className="rounded-md border border-[rgba(229,25,62,0.3)] bg-[rgba(229,25,62,0.1)] px-3 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-[rgba(229,25,62,0.2)]"
+          />
+        </div>
 
         <dl className="grid gap-5 sm:grid-cols-2">
           <div>

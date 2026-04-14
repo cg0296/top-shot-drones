@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import { RegisterVideoForm } from '@/components/register-video-form';
 import { SyncCloudflareButton } from '@/components/sync-cloudflare-button';
+import DeleteVideoButton from '@/components/delete-video-button';
 
 export const metadata = {
   title: 'Manage Videos — Top Shot Drones',
@@ -83,12 +84,13 @@ export default async function AdminVideosPage() {
               <th>CF Video ID</th>
               <th>Uploaded By</th>
               <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {videos.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center text-[var(--text-muted)]">
+                <td colSpan={7} className="text-center text-[var(--text-muted)]">
                   No videos registered yet
                 </td>
               </tr>
@@ -119,6 +121,9 @@ export default async function AdminVideosPage() {
                       day: 'numeric',
                       year: 'numeric',
                     })}
+                  </td>
+                  <td>
+                    <DeleteVideoButton videoId={video.id} videoTitle={video.title} />
                   </td>
                 </tr>
               ))
