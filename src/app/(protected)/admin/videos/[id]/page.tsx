@@ -45,7 +45,10 @@ export default async function AdminVideoDetailPage({
 
   const video = await db.video.findUnique({
     where: { id },
-    include: { organization: true },
+    include: {
+      organization: true,
+      game: { select: { homeTeamId: true, awayTeamId: true } },
+    },
   });
 
   if (!video) notFound();
@@ -62,9 +65,17 @@ export default async function AdminVideoDetailPage({
 
   const grantedUserIds = grants.map((g) => g.userId);
 
+  // Include users from both home and away teams if this video is linked to a game
+  const relevantOrgIds = [
+    video.organizationId,
+    video.game?.homeTeamId,
+    video.game?.awayTeamId,
+  ].filter((id): id is string => Boolean(id));
+  const uniqueOrgIds = [...new Set(relevantOrgIds)];
+
   const eligibleUsers = await db.user.findMany({
     where: {
-      memberships: { some: { organizationId: video.organizationId } },
+      memberships: { some: { organizationId: { in: uniqueOrgIds } } },
       id: { notIn: grantedUserIds.length > 0 ? grantedUserIds : undefined },
     },
     select: { id: true, name: true, email: true },
