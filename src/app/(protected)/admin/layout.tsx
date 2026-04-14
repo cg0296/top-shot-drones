@@ -7,6 +7,7 @@ const adminTabs = [
   { href: '/admin/videos', label: 'Videos' },
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/organizations', label: 'Organizations' },
+  { href: '/admin/leagues', label: 'Leagues' },
   { href: '/admin/audit', label: 'Audit Log' },
 ];
 

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { getAuthContext } from '@/lib/clerk-helpers';
 import { db } from '@/lib/db';
 import { cfThumbnail } from '@/lib/utils';
+import UnlockButton from '@/components/unlock-button';
 
 export const metadata = {
   title: 'Dashboard — Top Shot Drones',
@@ -80,7 +81,6 @@ async function MemberDashboard({
     );
   }
 
-  // Which of the user's teams actually have games?
   const orgIds = memberships.map((m) => m.organizationId);
   const orgsWithGames = await db.organization.findMany({
     where: {
@@ -91,21 +91,29 @@ async function MemberDashboard({
   });
   const orgsWithGamesSet = new Set(orgsWithGames.map((o) => o.id));
 
-  // Resolve active team — prefer a team that has games
   const activeMembership =
     memberships.find((m) => m.organization.slug === teamSlug) ??
     memberships.find((m) => orgsWithGamesSet.has(m.organizationId)) ??
     memberships[0];
   const activeTeam = activeMembership.organization;
 
-  // Seasons where this team participated (home or away)
+  // Seasons where this team participated (home/away games) OR is in via league membership
   const participatedSeasons = await db.season.findMany({
     where: {
-      games: {
-        some: {
-          OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+      OR: [
+        {
+          games: {
+            some: {
+              OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+            },
+          },
         },
-      },
+        {
+          league: {
+            memberships: { some: { orgId: activeTeam.id } },
+          },
+        },
+      ],
     },
     orderBy: [{ startDate: 'desc' }, { createdAt: 'desc' }],
   });
@@ -113,43 +121,82 @@ async function MemberDashboard({
   const activeSeason =
     participatedSeasons.find((s) => s.slug === seasonSlug) ?? participatedSeasons[0] ?? null;
 
-  // Games for active team + active season
+  // For league seasons, show ALL games in the season; for org seasons show only team's games
+  const isLeagueSeason = !!activeSeason?.leagueId;
+
   const rawGames = activeSeason
     ? await db.game.findMany({
         where: {
           seasonId: activeSeason.id,
-          OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+          ...(isLeagueSeason
+            ? {}
+            : { OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }] }),
         },
         include: {
           homeTeam: true,
           awayTeam: true,
-          videos: {
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-          },
+          videos: { orderBy: { createdAt: 'desc' }, take: 1 },
         },
         orderBy: { playedAt: 'desc' },
       })
     : [];
 
-  // Determine which videos the user has explicit access to
+  // Build access sets: VideoAccess grants + completed Purchases
   const videoIds = rawGames.flatMap((g) => g.videos.map((v) => v.id));
-  const accessGrants =
+
+  const [accessGrants, purchases] = await Promise.all([
     videoIds.length > 0
-      ? await db.videoAccess.findMany({
+      ? db.videoAccess.findMany({
           where: { userId, videoId: { in: videoIds } },
           select: { videoId: true },
         })
-      : [];
+      : [],
+    videoIds.length > 0 || activeSeason
+      ? db.purchase.findMany({
+          where: {
+            userId,
+            status: 'COMPLETED',
+            OR: [
+              ...(videoIds.length > 0 ? [{ videoId: { in: videoIds } }] : []),
+              ...(activeSeason ? [{ seasonId: activeSeason.id }] : []),
+            ],
+          },
+          select: { videoId: true, seasonId: true },
+        })
+      : [],
+  ]);
+
   const accessibleVideoIds = new Set(accessGrants.map((a) => a.videoId));
+  const purchasedVideoIds = new Set(
+    purchases.filter((p) => p.videoId).map((p) => p.videoId!),
+  );
+  const hasPurchasedSeason = purchases.some((p) => p.seasonId === activeSeason?.id);
 
-  const games = rawGames.map((g) => ({
-    ...g,
-    locked: g.videos.length > 0 && !accessibleVideoIds.has(g.videos[0].id),
-  }));
+  const games = rawGames.map((g) => {
+    const video = g.videos[0];
+    const isTeamGame = g.homeTeamId === activeTeam.id || g.awayTeamId === activeTeam.id;
+    const hasVideoAccess = video && accessibleVideoIds.has(video.id);
+    const hasPurchase =
+      video && (purchasedVideoIds.has(video.id) || hasPurchasedSeason);
+    return {
+      ...g,
+      locked: video != null && !isTeamGame && !hasVideoAccess && !hasPurchase,
+    };
+  });
 
-  const featuredGame = games.find((g) => g.videos.length > 0) ?? null;
-  const otherGames = games.filter((g) => g.id !== featuredGame?.id);
+  // Team's own games first (featured from those), then others
+  const teamGames = games.filter(
+    (g) => g.homeTeamId === activeTeam.id || g.awayTeamId === activeTeam.id,
+  );
+  const otherGames = games.filter(
+    (g) => g.homeTeamId !== activeTeam.id && g.awayTeamId !== activeTeam.id,
+  );
+
+  const featuredGame =
+    teamGames.find((g) => g.videos.length > 0) ??
+    games.find((g) => g.videos.length > 0) ??
+    null;
+  const remainingGames = games.filter((g) => g.id !== featuredGame?.id);
 
   return (
     <div className="animate-fade-in">
@@ -187,16 +234,34 @@ async function MemberDashboard({
         />
       ) : (
         <>
-          {featuredGame && <FeaturedGame game={featuredGame} viewedFrom={activeTeam.id} />}
+          {featuredGame && (
+            <FeaturedGame
+              game={featuredGame}
+              viewedFrom={activeTeam.id}
+              seasonId={activeSeason.id}
+            />
+          )}
 
-          {otherGames.length > 0 && (
+          {remainingGames.length > 0 && (
             <>
-              <h2 className="mb-4 mt-10 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                More games in {activeSeason.name}
-              </h2>
+              {isLeagueSeason && otherGames.length > 0 && (
+                <h2 className="mb-4 mt-10 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  Other games in {activeSeason.name}
+                </h2>
+              )}
+              {!isLeagueSeason && (
+                <h2 className="mb-4 mt-10 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  More games in {activeSeason.name}
+                </h2>
+              )}
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
-                {otherGames.map((g) => (
-                  <GameCard key={g.id} game={g} viewedFrom={activeTeam.id} />
+                {remainingGames.map((g) => (
+                  <GameCard
+                    key={g.id}
+                    game={g}
+                    viewedFrom={activeTeam.id}
+                    seasonId={activeSeason.id}
+                  />
                 ))}
               </div>
             </>
@@ -235,9 +300,7 @@ async function AdminDashboard({
   }
 
   const orgsWithGames = await db.organization.findMany({
-    where: {
-      OR: [{ homeGames: { some: {} } }, { awayGames: { some: {} } }],
-    },
+    where: { OR: [{ homeGames: { some: {} } }, { awayGames: { some: {} } }] },
     select: { id: true },
   });
   const orgsWithGamesSet = new Set(orgsWithGames.map((o) => o.id));
@@ -249,11 +312,20 @@ async function AdminDashboard({
 
   const participatedSeasons = await db.season.findMany({
     where: {
-      games: {
-        some: {
-          OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+      OR: [
+        {
+          games: {
+            some: {
+              OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+            },
+          },
         },
-      },
+        {
+          league: {
+            memberships: { some: { orgId: activeTeam.id } },
+          },
+        },
+      ],
     },
     orderBy: [{ startDate: 'desc' }, { createdAt: 'desc' }],
   });
@@ -261,11 +333,15 @@ async function AdminDashboard({
   const activeSeason =
     participatedSeasons.find((s) => s.slug === seasonSlug) ?? participatedSeasons[0] ?? null;
 
+  const isLeagueSeason = !!activeSeason?.leagueId;
+
   const rawGames = activeSeason
     ? await db.game.findMany({
         where: {
           seasonId: activeSeason.id,
-          OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+          ...(isLeagueSeason
+            ? {}
+            : { OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }] }),
         },
         include: {
           homeTeam: true,
@@ -312,16 +388,27 @@ async function AdminDashboard({
         <EmptyState title={`No games in ${activeSeason.name}`} body="" />
       ) : (
         <>
-          {featuredGame && <FeaturedGame game={featuredGame} viewedFrom={activeTeam.id} />}
+          {featuredGame && (
+            <FeaturedGame
+              game={featuredGame}
+              viewedFrom={activeTeam.id}
+              seasonId={activeSeason.id}
+            />
+          )}
 
           {otherGames.length > 0 && (
             <>
               <h2 className="mb-4 mt-10 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                More games in {activeSeason.name}
+                {isLeagueSeason ? `All games in ${activeSeason.name}` : `More games in ${activeSeason.name}`}
               </h2>
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
                 {otherGames.map((g) => (
-                  <GameCard key={g.id} game={g} viewedFrom={activeTeam.id} />
+                  <GameCard
+                    key={g.id}
+                    game={g}
+                    viewedFrom={activeTeam.id}
+                    seasonId={activeSeason.id}
+                  />
                 ))}
               </div>
             </>
@@ -452,18 +539,32 @@ type GameWithVideos = {
 
 function describeGame(game: GameWithVideos, viewedFromTeamId: string) {
   const isHome = game.homeTeam.id === viewedFromTeamId;
+  const isAway = game.awayTeam?.id === viewedFromTeamId;
+
+  if (!isHome && !isAway) {
+    // Not the user's team — show full matchup
+    const awayName = game.awayTeam?.name ?? 'TBD';
+    return {
+      matchup: `${game.homeTeam.name} vs ${awayName}`,
+      homeAway: null as string | null,
+      isHome: false,
+    };
+  }
+
   const opponent = isHome ? game.awayTeam : game.homeTeam;
   const matchup = opponent ? `${isHome ? 'vs' : '@'} ${opponent.name}` : game.title;
   const homeAway = isHome ? 'Home' : 'Away';
-  return { matchup, homeAway, isHome };
+  return { matchup, homeAway: homeAway as string | null, isHome };
 }
 
 function FeaturedGame({
   game,
   viewedFrom,
+  seasonId,
 }: {
   game: GameWithVideos;
   viewedFrom: string;
+  seasonId: string;
 }) {
   const { matchup, homeAway } = describeGame(game, viewedFrom);
   const video = game.videos[0];
@@ -509,17 +610,11 @@ function FeaturedGame({
           <h3 className="text-xl font-bold text-[var(--text-primary)] line-clamp-2">{matchup}</h3>
           <p className="mt-1.5 text-sm text-[var(--text-muted)]">
             {new Date(game.playedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-            {' · '}
-            {homeAway}
+            {homeAway ? ` · ${homeAway}` : ''}
           </p>
         </div>
         {locked ? (
-          <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-muted)]">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-            </svg>
-            Access required
-          </div>
+          <UnlockButton label="Unlock to watch" />
         ) : (
           <div className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] transition-all group-hover:gap-3">
             Watch now
@@ -553,9 +648,11 @@ function FeaturedGame({
 function GameCard({
   game,
   viewedFrom,
+  seasonId,
 }: {
   game: GameWithVideos;
   viewedFrom: string;
+  seasonId: string;
 }) {
   const { matchup, homeAway } = describeGame(game, viewedFrom);
   const video = game.videos[0];
@@ -591,10 +688,18 @@ function GameCard({
         )}
       </div>
       <div className="p-3">
-        <h3 className={`text-sm font-semibold line-clamp-1 ${locked ? 'text-[var(--text-muted)]' : ''}`}>{matchup}</h3>
+        <h3 className={`text-sm font-semibold line-clamp-1 ${locked ? 'text-[var(--text-muted)]' : ''}`}>
+          {matchup}
+        </h3>
         <p className="mt-1 text-xs text-[var(--text-muted)]">
-          {new Date(game.playedAt).toLocaleDateString()} · {homeAway}
+          {new Date(game.playedAt).toLocaleDateString()}
+          {homeAway ? ` · ${homeAway}` : ''}
         </p>
+        {locked && (
+          <div className="mt-2">
+            <UnlockButton />
+          </div>
+        )}
       </div>
     </>
   );
@@ -609,7 +714,7 @@ function GameCard({
 
   if (locked) {
     return (
-      <div className="video-card overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] opacity-80 cursor-not-allowed">
+      <div className="video-card overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
         {inner}
       </div>
     );
