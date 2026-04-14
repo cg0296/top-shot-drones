@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:www.hudl.com)",
       "WebFetch(domain:www.maxpreps.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(node -e ':*)"
     ]
   }
 }
