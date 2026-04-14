@@ -4,8 +4,10 @@ import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 
 const schema = z.object({
-  organizationId: z.string().min(1),
   gameId: z.string().optional(),
+  homeTeamId: z.string().optional(),
+  awayTeamId: z.string().optional(),
+  seasonId: z.string().optional(),
   kind: z.string().optional(),
   name: z.string().optional(),
   maxDurationSeconds: z.number().int().positive().max(21600).optional(),
@@ -30,31 +32,66 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 400 });
   }
 
-  const { organizationId, gameId, kind, name, maxDurationSeconds = 7200 } = parsed.data;
+  const { gameId, kind, name, maxDurationSeconds = 7200 } = parsed.data;
+  let { homeTeamId, awayTeamId, seasonId } = parsed.data;
 
-  if (user.role === 'STAFF' && user.organizationId !== organizationId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  let seasonId: string | undefined;
+  // If a game is specified, derive teams and season from it
   if (gameId) {
     const game = await db.game.findUnique({
       where: { id: gameId },
       include: { season: true },
     });
     if (!game) return NextResponse.json({ error: 'Game not found' }, { status: 404 });
-    if (game.season.organizationId !== organizationId) {
-      return NextResponse.json({ error: 'Game does not belong to this organization' }, { status: 400 });
-    }
+    homeTeamId = game.homeTeamId;
+    awayTeamId = game.awayTeamId ?? undefined;
     seasonId = game.seasonId;
   }
 
+  if (!homeTeamId) {
+    return NextResponse.json({ error: 'homeTeamId or gameId is required' }, { status: 400 });
+  }
+
+  // STAFF restriction: can only upload for their own team
+  if (
+    user.role === 'STAFF' &&
+    user.organizationId !== homeTeamId &&
+    user.organizationId !== awayTeamId
+  ) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // Fetch slugs/names for richer metadata (so an external sync can resolve by slug too)
+  const [homeTeam, awayTeam, season, game] = await Promise.all([
+    db.organization.findUnique({ where: { id: homeTeamId } }),
+    awayTeamId ? db.organization.findUnique({ where: { id: awayTeamId } }) : Promise.resolve(null),
+    seasonId ? db.season.findUnique({ where: { id: seasonId } }) : Promise.resolve(null),
+    gameId ? db.game.findUnique({ where: { id: gameId } }) : Promise.resolve(null),
+  ]);
+
+  if (!homeTeam) return NextResponse.json({ error: 'Home team not found' }, { status: 404 });
+
   const meta: Record<string, string> = {
-    orgId: organizationId,
     uploadedById: user.id,
+    homeTeamId,
+    homeTeamSlug: homeTeam.slug,
+    homeTeamName: homeTeam.name,
   };
-  if (seasonId) meta.seasonId = seasonId;
-  if (gameId) meta.gameId = gameId;
+  if (awayTeamId && awayTeam) {
+    meta.awayTeamId = awayTeamId;
+    meta.awayTeamSlug = awayTeam.slug;
+    meta.awayTeamName = awayTeam.name;
+  }
+  if (seasonId && season) {
+    meta.seasonId = seasonId;
+    meta.seasonSlug = season.slug;
+    meta.seasonName = season.name;
+  }
+  if (gameId && game) {
+    meta.gameId = gameId;
+    meta.gameSlug = game.slug;
+    meta.gameTitle = game.title;
+    meta.gameDate = game.playedAt.toISOString().slice(0, 10);
+  }
   if (kind) meta.kind = kind;
   if (name) meta.name = name;
 
@@ -66,10 +103,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        maxDurationSeconds,
-        meta,
-      }),
+      body: JSON.stringify({ maxDurationSeconds, meta }),
     },
   );
 

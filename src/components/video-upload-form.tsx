@@ -2,30 +2,33 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 
-interface Org { id: string; name: string }
+interface Org { id: string; name: string; slug: string }
 interface Season { id: string; name: string; slug: string }
-interface Game { id: string; title: string; slug: string; playedAt: string }
+interface Game {
+  id: string;
+  title: string;
+  slug: string;
+  playedAt: string;
+  homeTeam: { id: string; name: string };
+  awayTeam: { id: string; name: string } | null;
+}
 
 interface Props {
   organizations: Org[];
-  defaultOrgId?: string;
 }
 
-export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
-  const [orgId, setOrgId] = useState(defaultOrgId || (organizations[0]?.id ?? ''));
+export function VideoUploadForm({ organizations }: Props) {
+  const [homeTeamId, setHomeTeamId] = useState('');
+  const [awayTeamId, setAwayTeamId] = useState('');
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [gameId, setGameId] = useState('');
   const [kind, setKind] = useState('main');
 
-  // Inline create: season
   const [newSeasonName, setNewSeasonName] = useState('');
   const [creatingSeason, setCreatingSeason] = useState(false);
 
-  // Inline create: game
-  const [newGameTitle, setNewGameTitle] = useState('');
-  const [newGameOpponent, setNewGameOpponent] = useState('');
   const [newGameDate, setNewGameDate] = useState('');
   const [creatingGame, setCreatingGame] = useState(false);
 
@@ -34,14 +37,14 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
   const [status, setStatus] = useState<string>('');
   const [error, setError] = useState('');
 
-  // Load seasons when org changes
+  // Load seasons when home team changes (season is scoped to home team)
   useEffect(() => {
-    if (!orgId) return;
-    setSeasons([]); setSeasonId(''); setGames([]); setGameId('');
-    fetch(`/api/admin/seasons?organizationId=${orgId}`)
+    if (!homeTeamId) { setSeasons([]); setSeasonId(''); return; }
+    fetch(`/api/admin/seasons?organizationId=${homeTeamId}`)
       .then((r) => r.json())
       .then((data) => Array.isArray(data) && setSeasons(data));
-  }, [orgId]);
+    setSeasonId(''); setGames([]); setGameId('');
+  }, [homeTeamId]);
 
   // Load games when season changes
   useEffect(() => {
@@ -52,13 +55,13 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
   }, [seasonId]);
 
   async function createSeason() {
-    if (!newSeasonName.trim()) return;
+    if (!newSeasonName.trim() || !homeTeamId) return;
     setCreatingSeason(true);
     try {
       const res = await fetch('/api/admin/seasons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newSeasonName.trim(), organizationId: orgId }),
+        body: JSON.stringify({ name: newSeasonName.trim(), organizationId: homeTeamId }),
       });
       if (!res.ok) { setError('Failed to create season'); return; }
       const season = await res.json();
@@ -71,7 +74,7 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
   }
 
   async function createGame() {
-    if (!newGameTitle.trim() || !newGameDate || !seasonId) return;
+    if (!homeTeamId || !newGameDate || !seasonId) return;
     setCreatingGame(true);
     try {
       const res = await fetch('/api/admin/games', {
@@ -79,8 +82,8 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           seasonId,
-          title: newGameTitle.trim(),
-          opponent: newGameOpponent.trim() || undefined,
+          homeTeamId,
+          awayTeamId: awayTeamId || undefined,
           playedAt: new Date(newGameDate).toISOString(),
         }),
       });
@@ -88,7 +91,7 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
       const game = await res.json();
       setGames((g) => [game, ...g]);
       setGameId(game.id);
-      setNewGameTitle(''); setNewGameOpponent(''); setNewGameDate('');
+      setNewGameDate('');
     } finally {
       setCreatingGame(false);
     }
@@ -99,7 +102,7 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
     setError(''); setStatus(''); setProgress(null);
 
     if (!file) { setError('Pick a file first'); return; }
-    if (!orgId) { setError('Select an organization'); return; }
+    if (!homeTeamId) { setError('Select a home team'); return; }
 
     setStatus('Requesting upload URL…');
 
@@ -107,7 +110,9 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        organizationId: orgId,
+        homeTeamId,
+        awayTeamId: awayTeamId || undefined,
+        seasonId: seasonId || undefined,
         gameId: gameId || undefined,
         kind: kind || undefined,
         name: file.name,
@@ -138,12 +143,10 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
     }).catch((err) => { setError(err.message); });
 
     if (!error) {
-      setStatus(`Upload complete. Cloudflare UID: ${uid}. It will appear in the library once encoding finishes — run sync from Admin > Videos.`);
+      setStatus(`Upload complete (UID: ${uid}). Run sync once Cloudflare finishes encoding.`);
       setProgress(100);
     }
   }
-
-  const selectedOrg = organizations.find((o) => o.id === orgId);
 
   return (
     <form onSubmit={handleUpload} className="space-y-5 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
@@ -158,26 +161,43 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
         </div>
       )}
 
-      {/* Organization */}
-      <div>
-        <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
-          Organization
-        </label>
-        <select
-          value={orgId}
-          onChange={(e) => setOrgId(e.target.value)}
-          className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
-          required
-        >
-          <option value="">Select organization</option>
-          {organizations.map((o) => (
-            <option key={o.id} value={o.id}>{o.name}</option>
-          ))}
-        </select>
+      {/* Teams */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+            Home Team
+          </label>
+          <select
+            value={homeTeamId}
+            onChange={(e) => setHomeTeamId(e.target.value)}
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
+            required
+          >
+            <option value="">Select home team</option>
+            {organizations.map((o) => (
+              <option key={o.id} value={o.id}>{o.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+            Away Team
+          </label>
+          <select
+            value={awayTeamId}
+            onChange={(e) => setAwayTeamId(e.target.value)}
+            className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
+          >
+            <option value="">— None —</option>
+            {organizations.filter((o) => o.id !== homeTeamId).map((o) => (
+              <option key={o.id} value={o.id}>{o.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Season */}
-      {orgId && (
+      {homeTeamId && (
         <div>
           <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
             Season
@@ -195,7 +215,7 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
           <div className="mt-2 flex gap-2">
             <input
               type="text"
-              placeholder={`New season for ${selectedOrg?.name || 'org'} (e.g. "2026 Spring")`}
+              placeholder='New season (e.g. "Spring 2026")'
               value={newSeasonName}
               onChange={(e) => setNewSeasonName(e.target.value)}
               className="input-dark flex-1 rounded-lg px-3 py-2 text-sm"
@@ -230,36 +250,25 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
               </option>
             ))}
           </select>
-          <div className="mt-2 grid gap-2 sm:grid-cols-4">
-            <input
-              type="text"
-              placeholder="Game title"
-              value={newGameTitle}
-              onChange={(e) => setNewGameTitle(e.target.value)}
-              className="input-dark rounded-lg px-3 py-2 text-sm sm:col-span-1"
-            />
-            <input
-              type="text"
-              placeholder="Opponent"
-              value={newGameOpponent}
-              onChange={(e) => setNewGameOpponent(e.target.value)}
-              className="input-dark rounded-lg px-3 py-2 text-sm sm:col-span-1"
-            />
+          <div className="mt-2 flex gap-2">
             <input
               type="date"
               value={newGameDate}
               onChange={(e) => setNewGameDate(e.target.value)}
-              className="input-dark rounded-lg px-3 py-2 text-sm sm:col-span-1"
+              className="input-dark flex-1 rounded-lg px-3 py-2 text-sm"
             />
             <button
               type="button"
               onClick={createGame}
-              disabled={creatingGame || !newGameTitle.trim() || !newGameDate}
-              className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--bg-hover)] disabled:opacity-50 sm:col-span-1"
+              disabled={creatingGame || !newGameDate || !homeTeamId}
+              className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--bg-hover)] disabled:opacity-50"
             >
               {creatingGame ? '…' : '+ Add game'}
             </button>
           </div>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            New game uses the selected Home and Away teams above.
+          </p>
         </div>
       )}
 
@@ -311,7 +320,7 @@ export function VideoUploadForm({ organizations, defaultOrgId }: Props) {
 
       <button
         type="submit"
-        disabled={!file || !orgId || progress !== null}
+        disabled={!file || !homeTeamId || progress !== null}
         className="btn-accent rounded-lg px-5 py-2.5 text-sm font-semibold"
       >
         Upload

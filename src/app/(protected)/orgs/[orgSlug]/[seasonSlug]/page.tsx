@@ -19,15 +19,21 @@ export default async function SeasonGamesPage({ params }: Props) {
     redirect('/orgs');
   }
 
-  const season = await db.season.findUnique({
-    where: { organizationId_slug: { organizationId: org.id, slug: seasonSlug } },
-  });
+  // Season lookup — may belong to any org, just match by slug and confirm team participated
+  const season = await db.season.findFirst({ where: { slug: seasonSlug } });
   if (!season) notFound();
 
   const games = await db.game.findMany({
-    where: { seasonId: season.id },
+    where: {
+      seasonId: season.id,
+      OR: [{ homeTeamId: org.id }, { awayTeamId: org.id }],
+    },
     orderBy: { playedAt: 'desc' },
-    include: { _count: { select: { videos: true } } },
+    include: {
+      homeTeam: true,
+      awayTeam: true,
+      _count: { select: { videos: true } },
+    },
   });
 
   return (
@@ -44,23 +50,27 @@ export default async function SeasonGamesPage({ params }: Props) {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {games.map((g) => (
-            <Link
-              key={g.id}
-              href={`/orgs/${org.slug}/${season.slug}/${g.slug}`}
-              className="group rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5 transition hover:border-[var(--accent)]"
-            >
-              <h2 className="text-lg font-semibold group-hover:text-[var(--accent)]">{g.title}</h2>
-              <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                <span>{new Date(g.playedAt).toLocaleDateString()}</span>
-                {g.opponent && (<><span>·</span><span>vs {g.opponent}</span></>)}
-                {g.homeAway && (<><span>·</span><span>{g.homeAway}</span></>)}
-              </div>
-              <p className="mt-2 text-xs text-[var(--text-muted)]">
-                {g._count.videos} video{g._count.videos !== 1 ? 's' : ''}
-              </p>
-            </Link>
-          ))}
+          {games.map((g) => {
+            const isHome = g.homeTeamId === org.id;
+            const opponent = isHome ? g.awayTeam : g.homeTeam;
+            return (
+              <Link
+                key={g.id}
+                href={`/orgs/${org.slug}/${season.slug}/${g.slug}`}
+                className="group rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5 transition hover:border-[var(--accent)]"
+              >
+                <h2 className="text-lg font-semibold group-hover:text-[var(--accent)]">
+                  {isHome ? 'vs' : '@'} {opponent?.name ?? 'TBD'}
+                </h2>
+                <div className="mt-1 text-xs text-[var(--text-muted)]">
+                  {new Date(g.playedAt).toLocaleDateString()} · {isHome ? 'Home' : 'Away'}
+                </div>
+                <p className="mt-2 text-xs text-[var(--text-muted)]">
+                  {g._count.videos} video{g._count.videos !== 1 ? 's' : ''}
+                </p>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

@@ -23,12 +23,11 @@ export default async function UploadPage() {
     <div className="animate-fade-in mx-auto max-w-2xl">
       <h1 className="mb-2 text-2xl font-bold tracking-tight gradient-text">Upload Video</h1>
       <p className="mb-6 text-sm text-[var(--text-muted)]">
-        Upload directly to Cloudflare Stream. Select the organization, season, and game to
+        Upload directly to Cloudflare Stream. Select the home and away teams, season, and game to
         automatically associate the video when it finishes encoding.
       </p>
       <VideoUploadForm
-        organizations={organizations.map((o) => ({ id: o.id, name: o.name }))}
-        defaultOrgId={user.organizationId ?? undefined}
+        organizations={organizations.map((o) => ({ id: o.id, name: o.name, slug: o.slug }))}
       />
     </div>
   );

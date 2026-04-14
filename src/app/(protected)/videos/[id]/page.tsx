@@ -39,6 +39,7 @@ export default async function VideoDetailPage({ params }: Props) {
     include: {
       organization: true,
       uploadedBy: true,
+      game: true,
     },
   });
 
@@ -54,7 +55,10 @@ export default async function VideoDetailPage({ params }: Props) {
         break;
       case 'STAFF':
       case 'CUSTOMER':
-        authorized = video.organizationId === user.organizationId;
+        authorized =
+          video.organizationId === user.organizationId ||
+          video.game?.homeTeamId === user.organizationId ||
+          video.game?.awayTeamId === user.organizationId;
         break;
       case 'VIEWER': {
         const access = await db.videoAccess.findUnique({

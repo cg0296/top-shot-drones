@@ -28,7 +28,13 @@ export default async function VideosPage() {
           where: {
             OR: [
               { visibility: 'PUBLIC' },
-              ...(user.organizationId ? [{ organizationId: user.organizationId }] : []),
+              ...(user.organizationId
+                ? [
+                    { organizationId: user.organizationId },
+                    { game: { homeTeamId: user.organizationId } },
+                    { game: { awayTeamId: user.organizationId } },
+                  ]
+                : []),
             ],
           },
           include: { organization: true },

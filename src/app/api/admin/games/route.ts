@@ -12,9 +12,9 @@ const slugify = (s: string) =>
 
 const createSchema = z.object({
   seasonId: z.string().min(1),
-  title: z.string().min(1),
-  opponent: z.string().optional(),
-  homeAway: z.enum(['home', 'away']).optional(),
+  homeTeamId: z.string().min(1),
+  awayTeamId: z.string().optional(),
+  title: z.string().optional(),
   playedAt: z.string().datetime(),
   slug: z.string().optional(),
 });
@@ -29,13 +29,17 @@ export async function GET(request: NextRequest) {
   const season = await db.season.findUnique({ where: { id: seasonId } });
   if (!season) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  if (user.role !== 'ADMIN' && user.organizationId !== season.organizationId) {
+  if (
+    user.role !== 'ADMIN' &&
+    user.organizationId !== season.organizationId
+  ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const games = await db.game.findMany({
     where: { seasonId },
     orderBy: { playedAt: 'desc' },
+    include: { homeTeam: true, awayTeam: true },
   });
 
   return NextResponse.json(games);
@@ -54,10 +58,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 400 });
   }
 
-  const { seasonId, title, opponent, homeAway, playedAt } = parsed.data;
+  const { seasonId, homeTeamId, awayTeamId, playedAt } = parsed.data;
 
-  const season = await db.season.findUnique({ where: { id: seasonId } });
+  const [season, homeTeam, awayTeam] = await Promise.all([
+    db.season.findUnique({ where: { id: seasonId } }),
+    db.organization.findUnique({ where: { id: homeTeamId } }),
+    awayTeamId ? db.organization.findUnique({ where: { id: awayTeamId } }) : Promise.resolve(null),
+  ]);
+
   if (!season) return NextResponse.json({ error: 'Season not found' }, { status: 404 });
+  if (!homeTeam) return NextResponse.json({ error: 'Home team not found' }, { status: 404 });
+  if (awayTeamId && !awayTeam) return NextResponse.json({ error: 'Away team not found' }, { status: 404 });
 
   if (user.role === 'STAFF' && user.organizationId !== season.organizationId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -65,20 +76,24 @@ export async function POST(request: NextRequest) {
 
   const date = new Date(playedAt);
   const datePart = date.toISOString().slice(0, 10);
+  const title =
+    parsed.data.title ||
+    (awayTeam ? `${homeTeam.name} vs ${awayTeam.name}` : homeTeam.name);
   const slug = parsed.data.slug
     ? slugify(parsed.data.slug)
-    : `${datePart}-${slugify(opponent || title)}`;
+    : `${datePart}-${slugify(homeTeam.slug + (awayTeam ? '-vs-' + awayTeam.slug : ''))}`;
 
   try {
     const game = await db.game.create({
       data: {
         seasonId,
+        homeTeamId,
+        awayTeamId: awayTeamId ?? null,
         title,
-        opponent,
-        homeAway,
         playedAt: date,
         slug,
       },
+      include: { homeTeam: true, awayTeam: true },
     });
     return NextResponse.json(game, { status: 201 });
   } catch {

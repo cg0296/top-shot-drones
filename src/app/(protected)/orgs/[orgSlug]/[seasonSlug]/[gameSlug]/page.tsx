@@ -19,31 +19,41 @@ export default async function GameVideosPage({ params }: Props) {
     redirect('/orgs');
   }
 
-  const season = await db.season.findUnique({
-    where: { organizationId_slug: { organizationId: org.id, slug: seasonSlug } },
-  });
+  const season = await db.season.findFirst({ where: { slug: seasonSlug } });
   if (!season) notFound();
 
   const game = await db.game.findUnique({
     where: { seasonId_slug: { seasonId: season.id, slug: gameSlug } },
     include: {
-      videos: {
-        orderBy: { createdAt: 'asc' },
-      },
+      homeTeam: true,
+      awayTeam: true,
+      videos: { orderBy: { createdAt: 'asc' } },
     },
   });
   if (!game) notFound();
+
+  // Access: user's org must be a participant
+  if (
+    user.role !== 'ADMIN' &&
+    game.homeTeamId !== org.id &&
+    game.awayTeamId !== org.id
+  ) {
+    redirect('/orgs');
+  }
+
+  const isHome = game.homeTeamId === org.id;
+  const opponent = isHome ? game.awayTeam : game.homeTeam;
 
   return (
     <div className="animate-fade-in">
       <Link href={`/orgs/${org.slug}/${season.slug}`} className="mb-4 inline-block text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]">
         ← {season.name}
       </Link>
-      <h1 className="mb-2 text-2xl font-bold tracking-tight gradient-text">{game.title}</h1>
+      <h1 className="mb-2 text-2xl font-bold tracking-tight gradient-text">
+        {isHome ? 'vs' : '@'} {opponent?.name ?? 'TBD'}
+      </h1>
       <p className="mb-6 text-sm text-[var(--text-muted)]">
-        {new Date(game.playedAt).toLocaleDateString()}
-        {game.opponent && ` · vs ${game.opponent}`}
-        {game.homeAway && ` · ${game.homeAway}`}
+        {new Date(game.playedAt).toLocaleDateString()} · {isHome ? 'Home' : 'Away'}
       </p>
 
       {game.videos.length === 0 ? (

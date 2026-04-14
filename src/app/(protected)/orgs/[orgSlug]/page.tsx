@@ -19,10 +19,32 @@ export default async function OrgSeasonsPage({ params }: Props) {
     redirect('/orgs');
   }
 
+  // Seasons where this org played as home OR away — derived from games
+  const gameSeasonIds = await db.game.findMany({
+    where: { OR: [{ homeTeamId: org.id }, { awayTeamId: org.id }] },
+    select: { seasonId: true },
+    distinct: ['seasonId'],
+  });
+  const seasonIds = gameSeasonIds.map((g) => g.seasonId);
+
+  // Also include seasons explicitly owned by this org (even without games yet)
   const seasons = await db.season.findMany({
-    where: { organizationId: org.id },
+    where: {
+      OR: [
+        { id: { in: seasonIds } },
+        { organizationId: org.id },
+      ],
+    },
     orderBy: [{ startDate: 'desc' }, { createdAt: 'desc' }],
-    include: { _count: { select: { games: true } } },
+    include: {
+      _count: {
+        select: {
+          games: {
+            where: { OR: [{ homeTeamId: org.id }, { awayTeamId: org.id }] },
+          },
+        },
+      },
+    },
   });
 
   return (

@@ -54,6 +54,8 @@ model Organization {
   users     User[]
   videos    Video[]
   seasons   Season[]
+  homeGames Game[]   @relation("HomeGames")
+  awayGames Game[]   @relation("AwayGames")
 
   @@map("organizations")
 }
@@ -76,20 +78,24 @@ model Season {
 }
 
 model Game {
-  id        String   @id @default(cuid())
-  seasonId  String   @map("season_id")
-  title     String
-  opponent  String?
-  homeAway  String?  @map("home_away")
-  playedAt  DateTime @map("played_at")
-  slug      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(cuid())
+  seasonId    String   @map("season_id")
+  homeTeamId  String   @map("home_team_id")
+  awayTeamId  String?  @map("away_team_id")
+  title       String
+  playedAt    DateTime @map("played_at")
+  slug        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  season    Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  videos    Video[]
+  season      Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  homeTeam    Organization @relation("HomeGames", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam    Organization? @relation("AwayGames", fields: [awayTeamId], references: [id], onDelete: SetNull)
+  videos      Video[]
 
   @@unique([seasonId, slug])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
   @@map("games")
 }
 
