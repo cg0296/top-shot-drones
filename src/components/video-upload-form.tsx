@@ -24,7 +24,6 @@ export function VideoUploadForm({ organizations }: Props) {
   const [seasonId, setSeasonId] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [gameId, setGameId] = useState('');
-  const [kind, setKind] = useState('main');
 
   const [newSeasonName, setNewSeasonName] = useState('');
   const [creatingSeason, setCreatingSeason] = useState(false);
@@ -114,7 +113,6 @@ export function VideoUploadForm({ organizations }: Props) {
         awayTeamId: awayTeamId || undefined,
         seasonId: seasonId || undefined,
         gameId: gameId || undefined,
-        kind: kind || undefined,
         name: file.name,
       }),
     });
@@ -271,24 +269,6 @@ export function VideoUploadForm({ organizations }: Props) {
           </p>
         </div>
       )}
-
-      {/* Kind */}
-      <div>
-        <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
-          Clip Type
-        </label>
-        <select
-          value={kind}
-          onChange={(e) => setKind(e.target.value)}
-          className="input-dark w-full rounded-lg px-3.5 py-2.5 text-sm"
-        >
-          <option value="main">Main</option>
-          <option value="drone">Drone</option>
-          <option value="highlights">Highlights</option>
-          <option value="bench">Bench</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
 
       {/* File */}
       <div>

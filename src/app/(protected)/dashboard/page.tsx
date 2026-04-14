@@ -10,42 +10,55 @@ export const metadata = {
   title: 'Dashboard — Top Shot Drones',
 };
 
-function formatTimeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return 'just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return date.toLocaleDateString();
-}
+type SearchParams = Promise<{ team?: string; season?: string }>;
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect('/sign-in');
 
-  const isAdmin = user.role === 'ADMIN';
+  const { team: teamParam, season: seasonParam } = await searchParams;
 
-  if (isAdmin) {
-    return <AdminDashboard userName={user.name} />;
+  if (user.role === 'ADMIN') {
+    return (
+      <AdminDashboard
+        userName={user.name}
+        teamSlug={teamParam}
+        seasonSlug={seasonParam}
+      />
+    );
   }
 
-  return <MemberDashboard userId={user.id} userName={user.name} />;
+  return (
+    <MemberDashboard
+      userId={user.id}
+      userName={user.name}
+      userRole={user.role}
+      teamSlug={teamParam}
+      seasonSlug={seasonParam}
+    />
+  );
 }
 
 /* ------------------------------------------------------------------ */
-/* Team member dashboard                                               */
+/* Member dashboard                                                    */
 /* ------------------------------------------------------------------ */
 
 async function MemberDashboard({
   userId,
   userName,
+  userRole,
+  teamSlug,
+  seasonSlug,
 }: {
   userId: string;
   userName: string;
+  userRole: string;
+  teamSlug?: string;
+  seasonSlug?: string;
 }) {
   const memberships = await db.organizationMembership.findMany({
     where: { userId },
@@ -56,89 +69,106 @@ async function MemberDashboard({
   if (memberships.length === 0) {
     return (
       <div className="animate-fade-in">
-        <DashboardHeader name={userName} subtitle="Not on a team yet" />
+        <DashboardHeader name={userName} roleLabel={userRole} teams={[]} />
         <EmptyState
           title="Welcome to Top Shot Drones"
-          body="You’re not on a team yet. Your coach or admin will add you and your games will show up here automatically."
+          body="You're not on a team yet. Your admin will add you and your games will appear here."
         />
       </div>
     );
   }
 
-  const orgIds = memberships.map((m) => m.organizationId);
+  // Resolve active team
+  const activeMembership =
+    memberships.find((m) => m.organization.slug === teamSlug) ?? memberships[0];
+  const activeTeam = activeMembership.organization;
 
-  // Pull the most-recent video (across all the user's teams) for the hero.
-  const latest = await db.video.findFirst({
+  // Seasons where this team participated (home or away)
+  const participatedSeasons = await db.season.findMany({
     where: {
-      OR: [
-        { organizationId: { in: orgIds } },
-        { game: { homeTeamId: { in: orgIds } } },
-        { game: { awayTeamId: { in: orgIds } } },
-      ],
+      games: {
+        some: {
+          OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+        },
+      },
     },
-    include: {
-      organization: true,
-      game: { include: { homeTeam: true, awayTeam: true } },
-    },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ startDate: 'desc' }, { createdAt: 'desc' }],
   });
 
-  // Per-team recent videos (top 4 each)
-  const teamSections = await Promise.all(
-    memberships.map(async (m) => {
-      const videos = await db.video.findMany({
+  const activeSeason =
+    participatedSeasons.find((s) => s.slug === seasonSlug) ?? participatedSeasons[0] ?? null;
+
+  // Games for active team + active season
+  const games = activeSeason
+    ? await db.game.findMany({
         where: {
-          OR: [
-            { organizationId: m.organizationId },
-            { game: { homeTeamId: m.organizationId } },
-            { game: { awayTeamId: m.organizationId } },
-          ],
+          seasonId: activeSeason.id,
+          OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
         },
         include: {
-          game: { include: { homeTeam: true, awayTeam: true } },
+          homeTeam: true,
+          awayTeam: true,
+          videos: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
         },
-        orderBy: { createdAt: 'desc' },
-        take: 4,
-      });
-      return { org: m.organization, role: m.role, videos };
-    }),
-  );
+        orderBy: { playedAt: 'desc' },
+      })
+    : [];
 
-  const hasAnyVideo = teamSections.some((s) => s.videos.length > 0);
+  const featuredGame = games.find((g) => g.videos.length > 0) ?? null;
+  const otherGames = games.filter((g) => g.id !== featuredGame?.id);
 
   return (
     <div className="animate-fade-in">
       <DashboardHeader
         name={userName}
-        subtitle={
-          <span className="flex flex-wrap items-center gap-1.5">
-            {memberships.map((m) => (
-              <Link
-                key={m.organizationId}
-                href={`/orgs/${m.organization.slug}`}
-                className="rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-              >
-                {m.organization.name}
-              </Link>
-            ))}
-          </span>
-        }
+        roleLabel={activeMembership.role}
+        teams={memberships.map((m) => ({
+          slug: m.organization.slug,
+          name: m.organization.name,
+          active: m.organizationId === activeTeam.id,
+        }))}
       />
 
-      {!hasAnyVideo ? (
+      {participatedSeasons.length > 0 && (
+        <SeasonChips
+          teamSlug={activeTeam.slug}
+          seasons={participatedSeasons.map((s) => ({
+            slug: s.slug,
+            name: s.name,
+            active: activeSeason?.id === s.id,
+          }))}
+        />
+      )}
+
+      {!activeSeason ? (
         <EmptyState
-          title="No footage yet"
-          body="Clips will appear here after your next game. Check back soon."
+          title="No seasons yet"
+          body={`${activeTeam.name} hasn't played any games yet. Check back after your first game.`}
+        />
+      ) : games.length === 0 ? (
+        <EmptyState
+          title={`No games in ${activeSeason.name}`}
+          body="Games will appear here as they happen."
         />
       ) : (
         <>
-          {latest && <FeaturedVideo video={latest} />}
+          {featuredGame && <FeaturedGame game={featuredGame} viewedFrom={activeTeam.id} />}
 
-          <div className="space-y-10">
-            {teamSections.map((section) => (
-              <TeamSection key={section.org.id} {...section} />
-            ))}
-          </div>
+          {otherGames.length > 0 && (
+            <>
+              <h2 className="mb-4 mt-10 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                More games in {activeSeason.name}
+              </h2>
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                {otherGames.map((g) => (
+                  <GameCard key={g.id} game={g} viewedFrom={activeTeam.id} />
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
@@ -146,140 +176,190 @@ async function MemberDashboard({
 }
 
 /* ------------------------------------------------------------------ */
-/* Admin dashboard — platform-wide view                                */
+/* Admin dashboard — uses member layout across any selected team       */
 /* ------------------------------------------------------------------ */
 
-async function AdminDashboard({ userName }: { userName: string }) {
-  const [videos, videoCount, orgStats] = await Promise.all([
-    db.video.findMany({
-      include: {
-        organization: true,
-        game: { include: { homeTeam: true, awayTeam: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 12,
-    }),
-    db.video.count(),
-    db.organization.findMany({
-      include: { _count: { select: { memberships: true, videos: true } } },
-    }),
-  ]);
+async function AdminDashboard({
+  userName,
+  teamSlug,
+  seasonSlug,
+}: {
+  userName: string;
+  teamSlug?: string;
+  seasonSlug?: string;
+}) {
+  const orgs = await db.organization.findMany({ orderBy: { name: 'asc' } });
 
-  const [featured, ...recent] = videos;
+  if (orgs.length === 0) {
+    return (
+      <div className="animate-fade-in">
+        <DashboardHeader name={userName} roleLabel="ADMIN" teams={[]} />
+        <EmptyState
+          title="No teams yet"
+          body="Create your first organization from Admin → Organizations."
+        />
+      </div>
+    );
+  }
+
+  const activeTeam = orgs.find((o) => o.slug === teamSlug) ?? orgs[0];
+
+  const participatedSeasons = await db.season.findMany({
+    where: {
+      games: {
+        some: {
+          OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+        },
+      },
+    },
+    orderBy: [{ startDate: 'desc' }, { createdAt: 'desc' }],
+  });
+
+  const activeSeason =
+    participatedSeasons.find((s) => s.slug === seasonSlug) ?? participatedSeasons[0] ?? null;
+
+  const games = activeSeason
+    ? await db.game.findMany({
+        where: {
+          seasonId: activeSeason.id,
+          OR: [{ homeTeamId: activeTeam.id }, { awayTeamId: activeTeam.id }],
+        },
+        include: {
+          homeTeam: true,
+          awayTeam: true,
+          videos: { orderBy: { createdAt: 'desc' }, take: 1 },
+        },
+        orderBy: { playedAt: 'desc' },
+      })
+    : [];
+
+  const featuredGame = games.find((g) => g.videos.length > 0) ?? null;
+  const otherGames = games.filter((g) => g.id !== featuredGame?.id);
 
   return (
     <div className="animate-fade-in">
       <DashboardHeader
         name={userName}
-        subtitle={<span className="text-xs uppercase tracking-wider">Admin</span>}
+        roleLabel="ADMIN"
+        teams={orgs.map((o) => ({
+          slug: o.slug,
+          name: o.name,
+          active: o.id === activeTeam.id,
+        }))}
       />
 
-      <div className="mb-10 grid gap-4 grid-cols-2 sm:grid-cols-4">
-        <StatCard label="Videos" value={videoCount} />
-        <StatCard label="Organizations" value={orgStats.length} />
-        <StatCard
-          label="Memberships"
-          value={orgStats.reduce((sum, o) => sum + o._count.memberships, 0)}
+      {participatedSeasons.length > 0 && (
+        <SeasonChips
+          teamSlug={activeTeam.slug}
+          seasons={participatedSeasons.map((s) => ({
+            slug: s.slug,
+            name: s.name,
+            active: activeSeason?.id === s.id,
+          }))}
         />
-        <StatCard
-          label="This week"
-          value={
-            videos.filter(
-              (v) => Date.now() - v.createdAt.getTime() < 7 * 24 * 60 * 60 * 1000,
-            ).length
-          }
-        />
-      </div>
-
-      {featured && (
-        <div className="mb-10">
-          <SectionHeading>Latest upload</SectionHeading>
-          <FeaturedVideo video={featured} />
-        </div>
       )}
 
-      {recent.length > 0 && (
-        <div className="mb-10">
-          <div className="mb-4 flex items-center justify-between">
-            <SectionHeading>More videos</SectionHeading>
-            <Link
-              href="/videos"
-              className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--accent)]"
-            >
-              View all ({videoCount}) →
-            </Link>
-          </div>
-          <VideoGrid videos={recent.slice(0, 8)} />
-        </div>
-      )}
+      {!activeSeason ? (
+        <EmptyState title={`${activeTeam.name} has no games yet`} body="Upload a video to create the first game." />
+      ) : games.length === 0 ? (
+        <EmptyState title={`No games in ${activeSeason.name}`} body="" />
+      ) : (
+        <>
+          {featuredGame && <FeaturedGame game={featuredGame} viewedFrom={activeTeam.id} />}
 
-      <div className="border-t border-[var(--border)] pt-8">
-        <SectionHeading>Quick actions</SectionHeading>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <QuickAction href="/admin/upload">Upload video</QuickAction>
-          <QuickAction href="/admin/videos">Manage videos</QuickAction>
-          <QuickAction href="/admin/users">Invite users</QuickAction>
-        </div>
-      </div>
+          {otherGames.length > 0 && (
+            <>
+              <h2 className="mb-4 mt-10 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                More games in {activeSeason.name}
+              </h2>
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                {otherGames.map((g) => (
+                  <GameCard key={g.id} game={g} viewedFrom={activeTeam.id} />
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Shared UI bits                                                      */
+/* UI bits                                                             */
 /* ------------------------------------------------------------------ */
 
 function DashboardHeader({
   name,
-  subtitle,
+  roleLabel,
+  teams,
 }: {
   name: string;
-  subtitle: React.ReactNode;
+  roleLabel: string;
+  teams: Array<{ slug: string; name: string; active: boolean }>;
 }) {
   return (
-    <div className="mb-8">
+    <div className="mb-6">
       <h1 className="text-3xl font-bold tracking-tight">
         Welcome, <span className="gradient-text">{name.split(' ')[0]}</span>
       </h1>
-      <div className="mt-2 text-sm text-[var(--text-muted)]">
-        {new Date().toLocaleDateString('en-US', {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric',
-        })}
+      <div className="mt-1 flex items-center gap-2 text-sm text-[var(--text-muted)]">
+        <span>
+          {new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </span>
+        <span className="rounded-full bg-[var(--bg-card)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+          {roleLabel}
+        </span>
       </div>
-      <div className="mt-3">{subtitle}</div>
+
+      {teams.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {teams.map((t) => (
+            <Link
+              key={t.slug}
+              href={`/dashboard?team=${t.slug}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                t.active
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+              }`}
+            >
+              {t.name}
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function SeasonChips({
+  teamSlug,
+  seasons,
+}: {
+  teamSlug: string;
+  seasons: Array<{ slug: string; name: string; active: boolean }>;
+}) {
   return (
-    <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-      {children}
-    </h2>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
-      <div className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
-        {label}
-      </div>
-      <div className="mt-1 text-2xl font-bold text-[var(--text-primary)]">{value}</div>
+    <div className="mb-8 flex flex-wrap gap-2">
+      {seasons.map((s) => (
+        <Link
+          key={s.slug}
+          href={`/dashboard?team=${teamSlug}&season=${s.slug}`}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+            s.active
+              ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
+              : 'border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]'
+          }`}
+        >
+          {s.name}
+        </Link>
+      ))}
     </div>
-  );
-}
-
-function QuickAction({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-sm font-medium text-[var(--text-secondary)] transition hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
-    >
-      {children} →
-    </Link>
   );
 }
 
@@ -288,7 +368,6 @@ function EmptyState({ title, body }: { title: string; body: string }) {
     <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)]">
       <div className="max-w-sm px-6 text-center">
         <svg
-          xmlns="http://www.w3.org/2000/svg"
           className="mx-auto h-12 w-12 text-[var(--text-muted)]"
           fill="none"
           viewBox="0 0 24 24"
@@ -302,48 +381,56 @@ function EmptyState({ title, body }: { title: string; body: string }) {
           />
         </svg>
         <p className="mt-4 text-base font-medium text-[var(--text-primary)]">{title}</p>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">{body}</p>
+        {body && <p className="mt-2 text-sm text-[var(--text-muted)]">{body}</p>}
       </div>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Video UI                                                            */
+/* Game cards                                                          */
 /* ------------------------------------------------------------------ */
 
-type VideoForHero = {
+type GameWithVideos = {
   id: string;
   title: string;
-  description: string | null;
-  thumbnailUrl: string | null;
-  createdAt: Date;
-  organization: { name: string };
-  game: {
-    playedAt: Date;
-    homeTeam: { name: string };
-    awayTeam: { name: string } | null;
-  } | null;
+  playedAt: Date;
+  slug: string;
+  homeTeamId: string;
+  homeTeam: { id: string; name: string };
+  awayTeam: { id: string; name: string } | null;
+  videos: Array<{ id: string; title: string; thumbnailUrl: string | null }>;
 };
 
-function FeaturedVideo({ video }: { video: VideoForHero }) {
-  const matchup = video.game
-    ? `${video.game.homeTeam.name} vs ${video.game.awayTeam?.name ?? 'TBD'}`
-    : video.organization.name;
+function describeGame(game: GameWithVideos, viewedFromTeamId: string) {
+  const isHome = game.homeTeam.id === viewedFromTeamId;
+  const opponent = isHome ? game.awayTeam : game.homeTeam;
+  const matchup = opponent ? `${isHome ? 'vs' : '@'} ${opponent.name}` : game.title;
+  const homeAway = isHome ? 'Home' : 'Away';
+  return { matchup, homeAway, isHome };
+}
 
-  const when = video.game ? video.game.playedAt : video.createdAt;
+function FeaturedGame({
+  game,
+  viewedFrom,
+}: {
+  game: GameWithVideos;
+  viewedFrom: string;
+}) {
+  const { matchup, homeAway } = describeGame(game, viewedFrom);
+  const video = game.videos[0];
 
   return (
     <Link
       href={`/videos/${video.id}`}
-      className="group mb-10 block overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] transition hover:border-[var(--border-hover)] hover:shadow-xl"
+      className="group mb-2 block overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] transition hover:border-[var(--border-hover)] hover:shadow-xl"
     >
       <div className="grid md:grid-cols-5">
         <div className="relative aspect-video bg-[var(--bg-primary)] md:col-span-3 md:aspect-auto">
           {video.thumbnailUrl ? (
             <Image
               src={video.thumbnailUrl}
-              alt={video.title}
+              alt={matchup}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 60vw"
@@ -351,11 +438,7 @@ function FeaturedVideo({ video }: { video: VideoForHero }) {
           ) : null}
           <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/10">
             <div className="rounded-full bg-white/95 p-4 opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
-              <svg
-                className="h-6 w-6 text-[var(--accent)]"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="h-6 w-6 text-[var(--accent)]" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
@@ -368,11 +451,11 @@ function FeaturedVideo({ video }: { video: VideoForHero }) {
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent)]" />
               Latest
             </div>
-            <h3 className="text-xl font-bold text-[var(--text-primary)] line-clamp-2">
-              {matchup}
-            </h3>
+            <h3 className="text-xl font-bold text-[var(--text-primary)] line-clamp-2">{matchup}</h3>
             <p className="mt-1.5 text-sm text-[var(--text-muted)]">
-              {video.title} · {formatTimeAgo(when)}
+              {new Date(game.playedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {' · '}
+              {homeAway}
             </p>
           </div>
           <div className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] transition-all group-hover:gap-3">
@@ -387,133 +470,59 @@ function FeaturedVideo({ video }: { video: VideoForHero }) {
   );
 }
 
-function VideoGrid({
-  videos,
+function GameCard({
+  game,
+  viewedFrom,
 }: {
-  videos: Array<{
-    id: string;
-    title: string;
-    thumbnailUrl: string | null;
-    createdAt: Date;
-    organization: { name: string };
-  }>;
+  game: GameWithVideos;
+  viewedFrom: string;
 }) {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-      {videos.map((video) => (
-        <Link
-          key={video.id}
-          href={`/videos/${video.id}`}
-          className="video-card group overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]"
-        >
-          <div className="relative aspect-video bg-[var(--bg-primary)]">
-            {video.thumbnailUrl && (
-              <Image
-                src={video.thumbnailUrl}
-                alt={video.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              />
-            )}
-          </div>
-          <div className="p-3">
-            <h3 className="text-sm font-semibold line-clamp-2">{video.title}</h3>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
-              {video.organization.name} · {formatTimeAgo(video.createdAt)}
-            </p>
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-}
+  const { matchup, homeAway } = describeGame(game, viewedFrom);
+  const video = game.videos[0];
 
-/* ------------------------------------------------------------------ */
-/* Team section (member dashboard)                                     */
-/* ------------------------------------------------------------------ */
-
-function TeamSection({
-  org,
-  role,
-  videos,
-}: {
-  org: { id: string; name: string; slug: string };
-  role: string;
-  videos: Array<{
-    id: string;
-    title: string;
-    thumbnailUrl: string | null;
-    kind: string | null;
-    createdAt: Date;
-    game: {
-      playedAt: Date;
-      slug: string;
-      homeTeam: { name: string; id: string };
-      awayTeam: { name: string; id: string } | null;
-    } | null;
-  }>;
-}) {
-  return (
-    <section>
-      <div className="mb-4 flex items-end justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-[var(--text-primary)]">{org.name}</h2>
-          <p className="text-xs text-[var(--text-muted)]">{role}</p>
-        </div>
-        <Link
-          href={`/orgs/${org.slug}`}
-          className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--accent)]"
-        >
-          View all seasons →
-        </Link>
+  const inner = (
+    <>
+      <div className="relative aspect-video bg-[var(--bg-primary)]">
+        {video?.thumbnailUrl && (
+          <Image
+            src={video.thumbnailUrl}
+            alt={matchup}
+            fill
+            className="object-cover transition-transform group-hover:scale-105"
+            sizes="(max-width: 768px) 50vw, 25vw"
+          />
+        )}
+        {!video && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
+              No footage yet
+            </span>
+          </div>
+        )}
       </div>
+      <div className="p-3">
+        <h3 className="text-sm font-semibold line-clamp-1">{matchup}</h3>
+        <p className="mt-1 text-xs text-[var(--text-muted)]">
+          {new Date(game.playedAt).toLocaleDateString()} · {homeAway}
+        </p>
+      </div>
+    </>
+  );
 
-      {videos.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--border)] p-6 text-center text-xs text-[var(--text-muted)]">
-          No videos for this team yet.
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {videos.map((v) => {
-            const opponent = v.game
-              ? (v.game.homeTeam.id === org.id ? v.game.awayTeam : v.game.homeTeam)
-              : null;
-            const matchup = v.game
-              ? (v.game.homeTeam.id === org.id
-                  ? `vs ${opponent?.name ?? 'TBD'}`
-                  : `@ ${opponent?.name ?? 'TBD'}`)
-              : v.title;
+  if (!video) {
+    return (
+      <div className="video-card overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] opacity-60">
+        {inner}
+      </div>
+    );
+  }
 
-            return (
-              <Link
-                key={v.id}
-                href={`/videos/${v.id}`}
-                className="video-card group overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]"
-              >
-                <div className="relative aspect-video bg-[var(--bg-primary)]">
-                  {v.thumbnailUrl && (
-                    <Image
-                      src={v.thumbnailUrl}
-                      alt={v.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 50vw, 25vw"
-                    />
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-semibold line-clamp-1">{matchup}</h3>
-                  <p className="mt-1 text-xs text-[var(--text-muted)]">
-                    {v.game ? new Date(v.game.playedAt).toLocaleDateString() : formatTimeAgo(v.createdAt)}
-                    {v.kind ? ` · ${v.kind}` : ''}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </section>
+  return (
+    <Link
+      href={`/videos/${video.id}`}
+      className="video-card group overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]"
+    >
+      {inner}
+    </Link>
   );
 }

@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 400 });
   }
 
-  const { gameId, kind, name, maxDurationSeconds = 7200 } = parsed.data;
+  const { gameId, name, maxDurationSeconds = 7200 } = parsed.data;
+  const kind = 'drone';
   let { homeTeamId, awayTeamId, seasonId } = parsed.data;
 
   // If a game is specified, derive teams and season from it
