@@ -108,7 +108,7 @@ export async function POST() {
     const meta = v.meta || {};
     const title =
       (meta.name || '').replace(/\.(MOV|MP4|mp4|mov)$/i, '').replace(/_/g, ' ') || 'Untitled';
-    const thumbnailUrl = `https://customer-${CF_SUBDOMAIN}.cloudflarestream.com/${v.uid}/thumbnails/thumbnail.jpg`;
+    const thumbnailUrl = `https://customer-${CF_SUBDOMAIN}.cloudflarestream.com/${v.uid}/thumbnails/thumbnail.jpg?time=5s`;
 
     // 1. Resolve home team (required for game-tagged videos)
     let homeTeam = null;

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
+import { cfThumbnail } from '@/lib/utils';
 
 export const metadata = {
   title: 'Videos — Top Shot Drones',
@@ -107,9 +108,9 @@ export default async function VideosPage() {
           >
             {/* Thumbnail */}
             <div className="relative aspect-video w-full overflow-hidden bg-[var(--bg-secondary)]">
-              {video.thumbnailUrl ? (
+              {cfThumbnail(video.thumbnailUrl) ? (
                 <img
-                  src={video.thumbnailUrl}
+                  src={cfThumbnail(video.thumbnailUrl)!}
                   alt={video.title}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />

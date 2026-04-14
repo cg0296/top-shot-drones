@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
+import { cfThumbnail } from '@/lib/utils';
 
 type Props = { params: Promise<{ orgSlug: string; seasonSlug: string; gameSlug: string }> };
 
@@ -70,8 +71,8 @@ export default async function GameVideosPage({ params }: Props) {
               className="video-card group overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]"
             >
               <div className="relative aspect-video bg-[var(--bg-secondary)]">
-                {v.thumbnailUrl && (
-                  <img src={v.thumbnailUrl} alt={v.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                {cfThumbnail(v.thumbnailUrl) && (
+                  <img src={cfThumbnail(v.thumbnailUrl)!} alt={v.title} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                 )}
               </div>
               <div className="p-3.5">

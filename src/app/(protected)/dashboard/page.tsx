@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { getAuthContext } from '@/lib/clerk-helpers';
 import { db } from '@/lib/db';
+import { cfThumbnail } from '@/lib/utils';
 
 export const metadata = {
   title: 'Dashboard — Top Shot Drones',
@@ -485,9 +486,9 @@ function FeaturedGame({
   const inner = (
     <div className="grid md:grid-cols-5">
       <div className="relative aspect-video bg-[var(--bg-primary)] md:col-span-3 md:aspect-auto">
-        {video.thumbnailUrl ? (
+        {cfThumbnail(video.thumbnailUrl) ? (
           <Image
-            src={video.thumbnailUrl}
+            src={cfThumbnail(video.thumbnailUrl)!}
             alt={matchup}
             fill
             className={`object-cover transition-transform ${locked ? 'blur-sm scale-105' : ''}`}
@@ -577,9 +578,9 @@ function GameCard({
   const inner = (
     <>
       <div className="relative aspect-video bg-[var(--bg-primary)] overflow-hidden">
-        {video?.thumbnailUrl && (
+        {cfThumbnail(video?.thumbnailUrl) && (
           <Image
-            src={video.thumbnailUrl}
+            src={cfThumbnail(video.thumbnailUrl)!}
             alt={matchup}
             fill
             className={`object-cover transition-transform ${locked ? 'blur-sm scale-105' : 'group-hover:scale-105'}`}
