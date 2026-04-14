@@ -58,6 +58,26 @@ export default function UserActions({ user, currentUserId }: Props) {
     }
   }
 
+  const [impersonating, setImpersonating] = useState(false);
+  async function handleImpersonate() {
+    setImpersonating(true);
+    try {
+      const res = await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (res.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to start impersonation');
+      }
+    } finally {
+      setImpersonating(false);
+    }
+  }
+
   return (
     <div className="flex items-center gap-2">
       <select
@@ -73,6 +93,15 @@ export default function UserActions({ user, currentUserId }: Props) {
           </option>
         ))}
       </select>
+
+      <button
+        onClick={handleImpersonate}
+        disabled={isSelf || impersonating}
+        className="rounded-md border border-[var(--border)] px-2 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
+        title={isSelf ? 'Cannot view as yourself' : `View as ${user.name}`}
+      >
+        {impersonating ? '…' : 'View as'}
+      </button>
 
       <button
         onClick={handleDelete}

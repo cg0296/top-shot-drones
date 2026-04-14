@@ -3,22 +3,32 @@ export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getCurrentUser } from '@/lib/auth-helpers';
+import { getAuthContext } from '@/lib/clerk-helpers';
 import { UserButton } from '@clerk/nextjs';
+import ImpersonationBanner from '@/components/impersonation-banner';
 
 export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const { realUser, effectiveUser, impersonating } = await getAuthContext();
 
-  if (!user) redirect('/sign-in');
+  if (!effectiveUser) redirect('/sign-in');
 
+  const user = effectiveUser;
   const isPrivileged = user.role === 'ADMIN' || user.role === 'STAFF';
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <>
+      {impersonating && realUser && (
+        <ImpersonationBanner
+          targetName={impersonating.name}
+          targetEmail={impersonating.email}
+          realName={realUser.name}
+        />
+      )}
+      <div className="flex min-h-screen flex-col md:flex-row">
       {/* Desktop Sidebar — hidden on mobile */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[200px] flex-col items-center border-r border-[var(--border)] bg-[var(--bg-secondary)] py-6 md:flex">
         <Link href="/dashboard" className="mb-2 transition-transform hover:scale-105">
@@ -124,5 +134,6 @@ export default async function ProtectedLayout({
       {/* Bottom padding spacer for mobile nav */}
       <div className="h-16 md:hidden" />
     </div>
+    </>
   );
 }
