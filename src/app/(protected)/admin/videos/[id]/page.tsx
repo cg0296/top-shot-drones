@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import { VideoAccessManager } from '@/components/video-access-manager';
 import DeleteVideoButton from '@/components/delete-video-button';
+import { EditGameForm } from '@/components/edit-game-form';
 
 export async function generateMetadata({
   params,
@@ -43,13 +44,18 @@ export default async function AdminVideoDetailPage({
   if (!user) redirect('/sign-in');
   if (user.role !== 'ADMIN' && user.role !== 'STAFF') redirect('/dashboard');
 
-  const video = await db.video.findUnique({
-    where: { id },
-    include: {
-      organization: true,
-      game: { select: { homeTeamId: true, awayTeamId: true } },
-    },
-  });
+  const [video, allOrgs] = await Promise.all([
+    db.video.findUnique({
+      where: { id },
+      include: {
+        organization: true,
+        game: {
+          include: { homeTeam: true, awayTeam: true },
+        },
+      },
+    }),
+    db.organization.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+  ]);
 
   if (!video) notFound();
 
@@ -68,8 +74,8 @@ export default async function AdminVideoDetailPage({
   // Include users from both home and away teams if this video is linked to a game
   const relevantOrgIds = [
     video.organizationId,
-    video.game?.homeTeamId,
-    video.game?.awayTeamId,
+    video.game?.homeTeam.id,
+    video.game?.awayTeam?.id,
   ].filter((id): id is string => Boolean(id));
   const uniqueOrgIds = [...new Set(relevantOrgIds)];
 
@@ -148,6 +154,25 @@ export default async function AdminVideoDetailPage({
           </div>
         </dl>
       </div>
+
+      {/* Game editing */}
+      {video.game && (
+        <>
+          <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">
+            Edit Game
+          </h2>
+          <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-6">
+            <EditGameForm
+              gameId={video.game.id}
+              initialTitle={video.game.title}
+              initialHomeTeamId={video.game.homeTeam.id}
+              initialAwayTeamId={video.game.awayTeam?.id ?? null}
+              initialNotes={video.game.notes ?? null}
+              organizations={allOrgs}
+            />
+          </div>
+        </>
+      )}
 
       {/* Access management */}
       <h2 className="mb-4 text-lg font-semibold text-[var(--text-primary)]">

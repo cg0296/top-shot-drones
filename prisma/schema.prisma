@@ -99,6 +99,7 @@ model Game {
   title       String
   playedAt    DateTime @map("played_at")
   slug        String
+  notes       String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
