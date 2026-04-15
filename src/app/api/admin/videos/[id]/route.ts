@@ -3,6 +3,7 @@ import { z } from 'zod/v4';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import { logAction } from '@/lib/audit';
+import { updateCloudflareMetadata } from '@/lib/cloudflare';
 
 const updateVideoSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -71,6 +72,38 @@ export async function PUT(
     title: updated.title,
     visibility: updated.visibility,
   });
+
+  // Push updated metadata back to Cloudflare so future syncs stay in sync
+  const cfMeta: Record<string, string> = {
+    homeTeamId: org.id,
+    homeTeamSlug: org.slug,
+    homeTeamName: org.name,
+  };
+  if (gameId) {
+    const game = await db.game.findUnique({
+      where: { id: gameId },
+      include: {
+        season: true,
+        awayTeam: true,
+      },
+    });
+    if (game) {
+      cfMeta.gameId = game.id;
+      cfMeta.gameSlug = game.slug;
+      cfMeta.gameTitle = game.title;
+      cfMeta.gameDate = game.playedAt.toISOString().slice(0, 10);
+      cfMeta.seasonId = game.seasonId;
+      cfMeta.seasonSlug = game.season.slug;
+      cfMeta.seasonName = game.season.name;
+      if (game.awayTeam) {
+        cfMeta.awayTeamId = game.awayTeam.id;
+        cfMeta.awayTeamSlug = game.awayTeam.slug;
+        cfMeta.awayTeamName = game.awayTeam.name;
+      }
+    }
+  }
+  // Fire-and-forget — don't fail the request if CF update fails
+  updateCloudflareMetadata(updated.cloudflareVideoId, cfMeta).catch(() => {});
 
   return NextResponse.json(updated);
 }
