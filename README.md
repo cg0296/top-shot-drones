@@ -2,7 +2,7 @@
 
 Private video streaming platform for drone sports videography. Customers log in and watch only the videos they are authorized to access, streamed through Cloudflare Stream.
 
-## Tech Stack
+## Tech Stack - 
 
 - **Framework:** Next.js 16 (App Router)
 - **Auth:** Clerk
@@ -37,7 +37,7 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 
 # Cloudflare Stream (optional for initial setup)
 CLOUDFLARE_ACCOUNT_ID=
-CLOUDFLARE_API_TOKEN=
+CLOUDFLARE_API_TOKEN=s
 CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN=
 ```
 
