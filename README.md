@@ -2,7 +2,7 @@
 
 Private video streaming platform for drone sports videography. Customers log in and watch only the videos they are authorized to access, streamed through Cloudflare Stream.
 
-## Tech Stack
+## Tech Stack - 
 
 - **Framework:** Next.js 16 (App Router)
 - **Auth:** Clerk
